@@ -120,6 +120,9 @@ private:
 	void createCommandPool();
 	void createCommandBuffers();
 	void createSyncObjects();
+
+	void recreateSwapChain();
+	void cleanupSwapChain();
 	
 	bool checkValidationLayerSupport();
 	bool checkDeviceExtionSupport(VkPhysicalDevice& physicalDevice);

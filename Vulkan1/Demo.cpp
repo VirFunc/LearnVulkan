@@ -53,22 +53,7 @@ void Demo::cleanup()
 		vkDestroyFence(device, inFlightFences[i], nullptr);
 	}
 	vkDestroyCommandPool(device, commandPool, nullptr);
-
-	for (auto& framebuffer : swapChainFramebuffers)
-	{
-		vkDestroyFramebuffer(device, framebuffer, nullptr);
-	}
-
-	vkDestroyPipeline(device, graphicsPipeline, nullptr);
-	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
-	vkDestroyRenderPass(device, renderPass, nullptr);
-
-	for (auto& imageView : swapChainImageViews)
-	{
-		vkDestroyImageView(device, imageView, nullptr);
-	}
-
-	vkDestroySwapchainKHR(device, swapChain, nullptr);
+	cleanupSwapChain();
 	vkDestroyDevice(device, nullptr);
 
 	if (enableValidationLayers)
@@ -87,8 +72,15 @@ void Demo::drawFrame()
 
 	uint32_t imageIndex;
 	//获取下一张image
-	vkAcquireNextImageKHR(device, swapChain, std::numeric_limits<uint64_t>::max(),
-						  imageAvailableSemaphores[currFrame], VK_NULL_HANDLE, &imageIndex);
+	VkResult result = vkAcquireNextImageKHR(device, swapChain, std::numeric_limits<uint64_t>::max(),
+											imageAvailableSemaphores[currFrame], VK_NULL_HANDLE, &imageIndex);
+	if (result == VK_ERROR_OUT_OF_DATE_KHR)
+	{
+		recreateSwapChain();
+		return;
+	}
+	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+		throw std::runtime_error("Error : Failed to acquire next image!");
 
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -322,9 +314,9 @@ void Demo::createRenderPass()
 	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR; //在subpass开始时对现有数据的操作
 	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE; //在subpass结束时是否对数据存储
 	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE; //对模板缓冲的操作
-	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE; 
+	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	// the layout the attachment image subresource will be in when a render pass instance begins
-	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; 
+	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
 	VkAttachmentReference colorAttachmentRef = {};
@@ -609,6 +601,42 @@ void Demo::createSyncObjects()
 	}
 }
 
+//重新创建交换链
+void Demo::recreateSwapChain()
+{
+	//等待设备执行完成
+	vkDeviceWaitIdle(device);
+
+	cleanupSwapChain();
+
+	createSwapChain();
+	createImageViews(); //image view基于swapchain中的image
+	createRenderPass(); //render pass基于swapchain的format
+	createGraphicsPipeline(); //graphics pipeline中设置了viewport & scissor
+	createFramebuffers();
+	createCommandBuffers();
+}
+
+//清理交换链
+void Demo::cleanupSwapChain()
+{
+	for (auto& framebuffer : swapChainFramebuffers)
+	{
+		vkDestroyFramebuffer(device, framebuffer, nullptr);
+	}
+
+	vkDestroyPipeline(device, graphicsPipeline, nullptr);
+	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+	vkDestroyRenderPass(device, renderPass, nullptr);
+
+	for (auto& imageView : swapChainImageViews)
+	{
+		vkDestroyImageView(device, imageView, nullptr);
+	}
+
+	vkDestroySwapchainKHR(device, swapChain, nullptr);
+}
+
 //检测验证层支持
 bool Demo::checkValidationLayerSupport()
 {
@@ -857,7 +885,10 @@ VkExtent2D Demo::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
 	}
 	else
 	{
-		VkExtent2D actualExtent = { WIDTH,HEIGHT };
+		int width, height;
+		glfwGetFramebufferSize(window, &width, &height);
+
+		VkExtent2D actualExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
 		actualExtent.width = std::max(capabilities.minImageExtent.width,
 									  std::min(capabilities.maxImageExtent.width, actualExtent.width));
 		actualExtent.height = std::max(capabilities.minImageExtent.height,
