@@ -12,9 +12,12 @@ void Demo::initWindow()
 {
 	glfwInit();
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
 	window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan Demo", nullptr, nullptr);
+
+	glfwSetWindowUserPointer(window, this);
+	glfwSetFramebufferSizeCallback(window, framebufferResizedCallback);
 }
 
 void Demo::initVulkan()
@@ -30,6 +33,7 @@ void Demo::initVulkan()
 	createGraphicsPipeline();
 	createFramebuffers();
 	createCommandPool();
+	createVertexBuffer();
 	createCommandBuffers();
 	createSyncObjects();
 }
@@ -54,6 +58,8 @@ void Demo::cleanup()
 	}
 	vkDestroyCommandPool(device, commandPool, nullptr);
 	cleanupSwapChain();
+	vkDestroyBuffer(device, vertexBuffer, nullptr);
+	vkFreeMemory(device, vertexBufferMemory, nullptr);
 	vkDestroyDevice(device, nullptr);
 
 	if (enableValidationLayers)
@@ -68,18 +74,18 @@ void Demo::cleanup()
 void Demo::drawFrame()
 {
 	vkWaitForFences(device, 1, &inFlightFences[currFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
-	vkResetFences(device, 1, &inFlightFences[currFrame]);
 
 	uint32_t imageIndex;
 	//获取下一张image
 	VkResult result = vkAcquireNextImageKHR(device, swapChain, std::numeric_limits<uint64_t>::max(),
 											imageAvailableSemaphores[currFrame], VK_NULL_HANDLE, &imageIndex);
-	if (result == VK_ERROR_OUT_OF_DATE_KHR)
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
 	{
+		std::cout << "VK_ERROR_OUT_OF_DATE_KHR" << std::endl;
 		recreateSwapChain();
 		return;
 	}
-	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+	else if (result != VK_SUCCESS)
 		throw std::runtime_error("Error : Failed to acquire next image!");
 
 	VkSubmitInfo submitInfo = {};
@@ -98,6 +104,7 @@ void Demo::drawFrame()
 	submitInfo.pSignalSemaphores = signalSemaphores;
 	submitInfo.signalSemaphoreCount = 1;
 
+	vkResetFences(device, 1, &inFlightFences[currFrame]);
 	if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currFrame]) != VK_SUCCESS)
 		throw std::runtime_error("Error : Failed  to submit draw command buffer!");
 
@@ -111,7 +118,15 @@ void Demo::drawFrame()
 	presentInfo.pImageIndices = &imageIndex;
 	presentInfo.pResults = nullptr;
 
-	vkQueuePresentKHR(presentQueue, &presentInfo);
+	result = vkQueuePresentKHR(presentQueue, &presentInfo);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized)
+	{
+		framebufferResized = false;
+		recreateSwapChain();
+	}
+	else if (result != VK_SUCCESS)
+		throw std::runtime_error("Failed to present swap chain image!");
 
 	currFrame = (currFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
@@ -373,12 +388,15 @@ void Demo::createGraphicsPipeline()
 
 	VkPipelineShaderStageCreateInfo shaderStageInfos[] = { vertShaderStage,fragShaderStage };
 
+	auto bindingDescription = Vertex::getBindingDescription();
+	auto attributeDescription = Vertex::getAttributeDescription();
+
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputInfo.pVertexBindingDescriptions = nullptr;
-	vertexInputInfo.vertexBindingDescriptionCount = 0;
-	vertexInputInfo.pVertexAttributeDescriptions = nullptr;
-	vertexInputInfo.vertexAttributeDescriptionCount = 0;
+	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+	vertexInputInfo.vertexBindingDescriptionCount = 1;
+	vertexInputInfo.pVertexAttributeDescriptions = attributeDescription.data();
+	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescription.size());
 
 	//输入装配
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
@@ -531,6 +549,42 @@ void Demo::createCommandPool()
 		throw std::runtime_error("Error : Failed to create command pool!");
 }
 
+void Demo::createVertexBuffer()
+{
+	VkBufferCreateInfo bufferInfo = {};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.size = sizeof(decltype(vertices)::value_type)*vertices.size();
+	bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	//创建缓冲
+	if (vkCreateBuffer(device, &bufferInfo, nullptr, &vertexBuffer) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Error : Failed to create vertex buffer!");
+	}
+	//获取内存需求
+	VkMemoryRequirements memRequirements;
+	vkGetBufferMemoryRequirements(device, vertexBuffer, &memRequirements);
+
+	VkMemoryAllocateInfo allocInfo = {};
+	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocInfo.allocationSize = memRequirements.size;
+	//寻找合适的内存
+	allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits,
+											   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	//分配内存
+	if (vkAllocateMemory(device, &allocInfo, nullptr, &vertexBufferMemory) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Error : Failed to allocate memory!");
+	}
+	//为缓冲绑定内存
+	vkBindBufferMemory(device, vertexBuffer, vertexBufferMemory, 0);
+	//内存映射
+	void* data;
+	vkMapMemory(device, vertexBufferMemory, 0, bufferInfo.size, 0, &data);
+	memcpy(data, vertices.data(), (size_t)bufferInfo.size);
+	vkUnmapMemory(device, vertexBufferMemory);
+}
+
 void Demo::createCommandBuffers()
 {
 	commandBuffers.resize(swapChainFramebuffers.size());
@@ -567,7 +621,14 @@ void Demo::createCommandBuffers()
 
 		vkCmdBeginRenderPass(commandBuffers[i], &renderInfo, VK_SUBPASS_CONTENTS_INLINE);
 		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-		vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+
+		//绑定顶点缓冲
+		VkBuffer vertexBuffers[] = { vertexBuffer };
+		VkDeviceSize offsets[] = { 0 };
+		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+
+		//绘制
+		vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 
 		vkCmdEndRenderPass(commandBuffers[i]);
 
@@ -584,6 +645,7 @@ void Demo::createSyncObjects()
 
 	VkSemaphoreCreateInfo  semaphoreInfo = {};
 	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
 
 	VkFenceCreateInfo fenceInfo = {};
 	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
@@ -606,7 +668,6 @@ void Demo::recreateSwapChain()
 {
 	//等待设备执行完成
 	vkDeviceWaitIdle(device);
-
 	cleanupSwapChain();
 
 	createSwapChain();
@@ -949,6 +1010,12 @@ std::vector<char> Demo::readFile(const std::string & path)
 	return buffer;
 }
 
+void Demo::framebufferResizedCallback(GLFWwindow * window, int width, int height)
+{
+	auto app = reinterpret_cast<Demo*>(glfwGetWindowUserPointer(window));
+	app->framebufferResized = true;
+}
+
 VkResult createDebugUtilsMessengerEXT(VkInstance instance,
 									  const VkDebugUtilsMessengerCreateInfoEXT * pCreateInfo,
 									  const VkAllocationCallbacks * pAllocator,
@@ -981,4 +1048,20 @@ VkShaderModule Demo::createShaderModule(const std::vector<char>& code)
 	if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
 		throw std::runtime_error("Error : Failed to create shader module!");
 	return shaderModule;
+}
+
+uint32_t Demo::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+{
+	VkPhysicalDeviceMemoryProperties memProperties;
+	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+
+	for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i)
+	{
+		if (typeFilter & (1 << i) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+		{
+			return i;
+		}
+	}
+
+	throw std::runtime_error("Error : Failed to find suitable memory type!");
 }

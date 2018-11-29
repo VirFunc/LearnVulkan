@@ -1,6 +1,7 @@
 #pragma once
 #define GLFW_INCLUDE_VULKAN
 #include<GLFW/glfw3.h>
+#include<glm/glm.hpp>
 
 #include<iostream>
 #include<fstream>
@@ -13,6 +14,7 @@
 #include<set>
 #include<limits>
 #include<algorithm>
+#include<array>
 
 struct QueueFamilyIndices
 {
@@ -32,9 +34,47 @@ struct SwapChainSupportDetails
 	std::vector<VkPresentModeKHR> presentModes;
 };
 
+struct Vertex
+{
+	glm::vec2 pos;
+	glm::vec3 color;
+
+	static VkVertexInputBindingDescription getBindingDescription()
+	{
+		VkVertexInputBindingDescription bindingDescription = {};
+		bindingDescription.binding = 0;
+		bindingDescription.stride = sizeof(Vertex);
+		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+		return bindingDescription;
+	}
+
+	static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescription()
+	{
+		std::array<VkVertexInputAttributeDescription, 2> attributeDescription = {};
+		attributeDescription[0].binding = 0;
+		attributeDescription[0].location = 0;
+		attributeDescription[0].format = VK_FORMAT_R32G32_SFLOAT;
+		attributeDescription[0].offset = offsetof(Vertex, pos);
+
+		attributeDescription[1].binding = 0;
+		attributeDescription[1].location = 1;
+		attributeDescription[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+		attributeDescription[1].offset = offsetof(Vertex, color);
+
+		return attributeDescription;
+	}
+};
+
 constexpr int WIDTH = 800;
 constexpr int HEIGHT = 600;
 #define MAX_FRAMES_IN_FLIGHT 2
+
+const std::vector<Vertex> vertices =
+{
+	{{0.0f, -0.5f},{1.0f, 0.0f, 0.0f}},
+	{{0.5f,  0.5f},{0.0f, 1.0f, 0.0f}},
+	{{-0.5f, 0.5f},{0.0f, 0.0f, 1.0f}}
+};
 
 //将打开的验证层
 const std::vector<const char*> validationLayers =
@@ -54,13 +94,13 @@ constexpr bool enableValidationLayers = false;
 #endif
 
 VkResult createDebugUtilsMessengerEXT(VkInstance instance,
-	const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-	const VkAllocationCallbacks* pAllocator,
-	VkDebugUtilsMessengerEXT* pCallback);
+									  const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+									  const VkAllocationCallbacks* pAllocator,
+									  VkDebugUtilsMessengerEXT* pCallback);
 
 void destroyDebugUtilsMessengerEXT(VkInstance instance,
-	VkDebugUtilsMessengerEXT callback,
-	const VkAllocationCallbacks* pAllocator);
+								   VkDebugUtilsMessengerEXT callback,
+								   const VkAllocationCallbacks* pAllocator);
 
 
 class Demo
@@ -98,8 +138,13 @@ private:
 	std::vector<VkSemaphore> imageAvailableSemaphores;
 	std::vector<VkSemaphore> renderFinishedSemaphores;
 	std::vector<VkFence> inFlightFences;
+	VkBuffer vertexBuffer;
+	VkDeviceMemory vertexBufferMemory;
+
+
 	size_t currFrame = 0;
-	
+	bool framebufferResized = false;
+
 	void initWindow();
 	void initVulkan();
 	void mainLoop();
@@ -118,12 +163,13 @@ private:
 	void createGraphicsPipeline();
 	void createFramebuffers();
 	void createCommandPool();
+	void createVertexBuffer();
 	void createCommandBuffers();
 	void createSyncObjects();
 
 	void recreateSwapChain();
 	void cleanupSwapChain();
-	
+
 	bool checkValidationLayerSupport();
 	bool checkDeviceExtionSupport(VkPhysicalDevice& physicalDevice);
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice& device);
@@ -134,6 +180,7 @@ private:
 	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capacities);
 	std::vector<const char*> getRequiredExtensions();
 	VkShaderModule createShaderModule(const std::vector<char>& code);
+	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
 	//vulkan debug callback
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
@@ -143,4 +190,5 @@ private:
 		void* pUserData);
 
 	static std::vector<char> readFile(const std::string& path);
+	static void framebufferResizedCallback(GLFWwindow* window, int width, int height);
 };
