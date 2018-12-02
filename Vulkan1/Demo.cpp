@@ -34,6 +34,7 @@ void Demo::initVulkan()
 	createFramebuffers();
 	createCommandPool();
 	createVertexBuffer();
+	createIndexBuffer();
 	createCommandBuffers();
 	createSyncObjects();
 }
@@ -58,8 +59,11 @@ void Demo::cleanup()
 	}
 	vkDestroyCommandPool(device, commandPool, nullptr);
 	cleanupSwapChain();
+
 	vkDestroyBuffer(device, vertexBuffer, nullptr);
 	vkFreeMemory(device, vertexBufferMemory, nullptr);
+	vkDestroyBuffer(device, indexBuffer, nullptr);
+	vkFreeMemory(device, indexBufferMemory, nullptr);
 	vkDestroyDevice(device, nullptr);
 
 	if (enableValidationLayers)
@@ -322,7 +326,7 @@ void Demo::createImageViews()
 
 void Demo::createRenderPass()
 {
-
+	//颜色附件描述
 	VkAttachmentDescription colorAttachment = {};
 	colorAttachment.format = swapChainFormat; //image view的格式
 	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -331,16 +335,19 @@ void Demo::createRenderPass()
 	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE; //对模板缓冲的操作
 	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	// the layout the attachment image subresource will be in when a render pass instance begins
-	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; //renderpass开始时image的布局
+	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; //renderpass结束时image的布局
 
+	//附件引用
 	VkAttachmentReference colorAttachmentRef = {};
 	colorAttachmentRef.attachment = 0; //attachment的索引
-	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; //附件被引用时的布局(layout)
 
+	//子通道描述
+	//每个子通道会引用一个或多个 附件(attachment)
 	VkSubpassDescription subpass = {};
-	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpass.pColorAttachments = &colorAttachmentRef;
+	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS; //该subpass绑定到graphics管道
+	subpass.pColorAttachments = &colorAttachmentRef; //颜色附件引用
 	subpass.colorAttachmentCount = 1;
 
 	VkSubpassDependency dependency = {};
@@ -355,9 +362,9 @@ void Demo::createRenderPass()
 
 	VkRenderPassCreateInfo renderPassInfo = {};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	renderPassInfo.pAttachments = &colorAttachment;
+	renderPassInfo.pAttachments = &colorAttachment; //renderpass所有的附件
 	renderPassInfo.attachmentCount = 1;
-	renderPassInfo.pSubpasses = &subpass;
+	renderPassInfo.pSubpasses = &subpass; //renderpass所包含的subpass
 	renderPassInfo.subpassCount = 1;
 	renderPassInfo.pDependencies = &dependency;
 	renderPassInfo.dependencyCount = 1;
@@ -368,12 +375,15 @@ void Demo::createRenderPass()
 
 void Demo::createGraphicsPipeline()
 {
+	//加载着色器
 	auto vertShaderCode = readFile("Shader\\vert.spv");
 	auto fragShaderCode = readFile("Shader\\frag.spv");
 
 	VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
 	VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
 
+	//shader stage
+	//包含该 着色器被使用的阶段/着色器的入口函数 等信息
 	VkPipelineShaderStageCreateInfo vertShaderStage = {};
 	vertShaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	vertShaderStage.stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -391,6 +401,7 @@ void Demo::createGraphicsPipeline()
 	auto bindingDescription = Vertex::getBindingDescription();
 	auto attributeDescription = Vertex::getAttributeDescription();
 
+	//顶点输入的状态
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
@@ -401,7 +412,9 @@ void Demo::createGraphicsPipeline()
 	//输入装配
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+	//对输入的顶点数据如何装配
 	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	//是否允许 图元重启
 	inputAssembly.primitiveRestartEnable = false;
 
 	//视口
@@ -418,6 +431,7 @@ void Demo::createGraphicsPipeline()
 	scissor.extent = swapChainExtent;
 	scissor.offset = { 0,0 };
 
+	//管线中 视口/裁剪 状态
 	VkPipelineViewportStateCreateInfo viewportState = {};
 	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 	viewportState.pViewports = &viewport;
@@ -428,12 +442,13 @@ void Demo::createGraphicsPipeline()
 	//光栅器
 	VkPipelineRasterizationStateCreateInfo rasterizer = {};
 	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-	rasterizer.depthClampEnable = false; //若为真，超过近、远平面的片段会被阶段而不是丢弃
+	rasterizer.depthClampEnable = false; //若为真，超过近、远平面的片段会被截断而不是丢弃
 	rasterizer.rasterizerDiscardEnable = false; //若为真，所有片段都会被丢弃
-	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-	rasterizer.lineWidth = 1.0f;
-	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+	rasterizer.polygonMode = VK_POLYGON_MODE_FILL; //多边形填充模式
+	rasterizer.lineWidth = 1.0f; //线宽
+	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT; //面剔除模式
 	rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE; //哪面为正面
+	//使光栅器通过 增加一个常量/根据图元的斜率 来改变其深度值
 	rasterizer.depthBiasEnable = false;
 	rasterizer.depthBiasConstantFactor = 0.0f;
 	rasterizer.depthBiasSlopeFactor = 0.0f;
@@ -455,14 +470,18 @@ void Demo::createGraphicsPipeline()
 
 	//混合
 	VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
+	colorBlendAttachment.blendEnable = true; //是否开启blend
+	// 哪些组成可以被写入
 	colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
 		VK_COLOR_COMPONENT_G_BIT |
 		VK_COLOR_COMPONENT_B_BIT |
 		VK_COLOR_COMPONENT_A_BIT;
-	colorBlendAttachment.blendEnable = true;
+	//混合方程中的各个因子
+	//finalColor.rgb = (srcColorBlendFactor * newColor.rgb) <colorBlendOp> (dstColorBlendFactor * oldColor.rgb);
 	colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
 	colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
 	colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+	//finalColor.a   = (srcAlphaBlendFactor * newColor.a)   <alphaBlendOp> (dstAlphaBlendFactor * oldColor.a);
 	colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
 	colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
 	colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
@@ -491,23 +510,24 @@ void Demo::createGraphicsPipeline()
 	if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
 		throw std::runtime_error("Error : Failed to create pipeline layout!");
 
+	//创建图形渲染管线
 	VkGraphicsPipelineCreateInfo pipelineInfo = {};
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	pipelineInfo.pStages = shaderStageInfos;
+	pipelineInfo.pStages = shaderStageInfos; //shader stage
 	pipelineInfo.stageCount = 2;
-	pipelineInfo.pVertexInputState = &vertexInputInfo;
-	pipelineInfo.pInputAssemblyState = &inputAssembly;
-	pipelineInfo.pViewportState = &viewportState;
-	pipelineInfo.pRasterizationState = &rasterizer;
-	pipelineInfo.pMultisampleState = &multisampleState;
-	pipelineInfo.pDepthStencilState = nullptr;
-	pipelineInfo.pColorBlendState = &colorBlendState;
+	pipelineInfo.pVertexInputState = &vertexInputInfo;  //顶点输入说明
+	pipelineInfo.pInputAssemblyState = &inputAssembly;  //输入装配说明
+	pipelineInfo.pViewportState = &viewportState;	    //视口说明
+	pipelineInfo.pRasterizationState = &rasterizer;     //光栅器说明
+	pipelineInfo.pMultisampleState = &multisampleState; //多重采样说明
+	pipelineInfo.pDepthStencilState = nullptr;			//深度/模板说明
+	pipelineInfo.pColorBlendState = &colorBlendState;	//颜色混合说明
 	pipelineInfo.pDynamicState = nullptr;
-	pipelineInfo.layout = pipelineLayout;
+	pipelineInfo.layout = pipelineLayout;				//管线布局
 	pipelineInfo.renderPass = renderPass;
 	pipelineInfo.subpass = 0;
-	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-	pipelineInfo.basePipelineIndex = -1;
+	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;	//基础管线（vulkan允许在已经存在的管线上派生新的管线）
+	pipelineInfo.basePipelineIndex = -1;				//基础管线索引
 
 	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS)
 		throw std::runtime_error("Error : Failed to create graphics pipeline!");
@@ -517,6 +537,7 @@ void Demo::createGraphicsPipeline()
 
 void Demo::createFramebuffers()
 {
+	//为swapchain中的每一个image创建framebuffer
 	swapChainFramebuffers.resize(swapChainImageViews.size());
 
 	size_t i = 0;
@@ -524,12 +545,12 @@ void Demo::createFramebuffers()
 	{
 		VkFramebufferCreateInfo framebufferInfo = {};
 		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferInfo.renderPass = renderPass;
-		framebufferInfo.pAttachments = &imageViews;
+		framebufferInfo.renderPass = renderPass; //确定framebuffer将与哪个renderpass兼容
+		framebufferInfo.pAttachments = &imageViews; //为framebuffer指定imageview
 		framebufferInfo.attachmentCount = 1;
 		framebufferInfo.width = swapChainExtent.width;
 		framebufferInfo.height = swapChainExtent.height;
-		framebufferInfo.layers = 1;
+		framebufferInfo.layers = 1; //image数组中layer数量
 
 		if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &swapChainFramebuffers[i++]) != VK_SUCCESS)
 			throw std::runtime_error("Error : Failed to create framebuffer!");
@@ -542,7 +563,7 @@ void Demo::createCommandPool()
 
 	VkCommandPoolCreateInfo commandPoolInfo = {};
 	commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	commandPoolInfo.queueFamilyIndex = indices.graphicsFamily.value();
+	commandPoolInfo.queueFamilyIndex = indices.graphicsFamily.value(); //命令池将被提交到的队列
 	commandPoolInfo.flags = 0;
 
 	if (vkCreateCommandPool(device, &commandPoolInfo, nullptr, &commandPool) != VK_SUCCESS)
@@ -551,44 +572,68 @@ void Demo::createCommandPool()
 
 void Demo::createVertexBuffer()
 {
-	VkBufferCreateInfo bufferInfo = {};
-	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size = sizeof(decltype(vertices)::value_type)*vertices.size();
-	bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	//创建缓冲
-	if (vkCreateBuffer(device, &bufferInfo, nullptr, &vertexBuffer) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Error : Failed to create vertex buffer!");
-	}
-	//获取内存需求
-	VkMemoryRequirements memRequirements;
-	vkGetBufferMemoryRequirements(device, vertexBuffer, &memRequirements);
-
-	VkMemoryAllocateInfo allocInfo = {};
-	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocInfo.allocationSize = memRequirements.size;
-	//寻找合适的内存
-	allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits,
-											   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-	//分配内存
-	if (vkAllocateMemory(device, &allocInfo, nullptr, &vertexBufferMemory) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Error : Failed to allocate memory!");
-	}
-	//为缓冲绑定内存
-	vkBindBufferMemory(device, vertexBuffer, vertexBufferMemory, 0);
+	VkDeviceSize bufferSize = sizeof(decltype(vertices)::value_type)*vertices.size();
+	//临时缓冲
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMemory;
+	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+				 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+				 stagingBuffer, stagingBufferMemory);
 	//内存映射
 	void* data;
-	vkMapMemory(device, vertexBufferMemory, 0, bufferInfo.size, 0, &data);
-	memcpy(data, vertices.data(), (size_t)bufferInfo.size);
-	vkUnmapMemory(device, vertexBufferMemory);
+	vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
+	memcpy(data, vertices.data(), (size_t)bufferSize);
+	vkUnmapMemory(device, stagingBufferMemory);
+
+	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+				 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
+	//复制缓冲区
+	copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
+
+	//清理临时缓冲
+	vkDestroyBuffer(device, stagingBuffer, nullptr);
+	vkFreeMemory(device, stagingBufferMemory, nullptr);
+}
+
+void Demo::createIndexBuffer()
+{
+	VkDeviceSize bufferSize = sizeof(decltype(indices)::value_type)*indices.size();
+
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMemory;
+	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+				 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+				 stagingBuffer, stagingBufferMemory);
+
+	void* data;
+	vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
+	memcpy(data, indices.data(), (size_t)bufferSize);
+
+	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+				 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
+
+	copyBuffer(stagingBuffer, indexBuffer, bufferSize);
+
+	vkDestroyBuffer(device, stagingBuffer, nullptr);
+	vkFreeMemory(device, stagingBufferMemory, nullptr);
 }
 
 void Demo::createCommandBuffers()
 {
+	//Command Buffer
+	//	|->Render Pass Begin
+	//		|->Bind Graphics pipeline
+	//		|->State Management
+	//		|->Bind Vertex Buffer
+	//		|->Update Vertex Buffer(output)
+	//		|->Bind Description Set
+	//		|->Draw
+	//		|->Execute Command
+	//	|=>Render Pass End
+
 	commandBuffers.resize(swapChainFramebuffers.size());
 
+	//为每一个swap chain framebuffer 申请命令缓冲
 	VkCommandBufferAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.commandPool = commandPool;
@@ -606,6 +651,7 @@ void Demo::createCommandBuffers()
 		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT; //命令缓冲可以在等待执行时再次提交
 		beginInfo.pInheritanceInfo = nullptr;
 
+		//开始记录command
 		if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo) != VK_SUCCESS)
 			throw std::runtime_error("Error : Failed to begin recording command buffer!");
 
@@ -619,19 +665,21 @@ void Demo::createCommandBuffers()
 		renderInfo.pClearValues = &clearColor;
 		renderInfo.clearValueCount = 1;
 
+		//开始一个renderpass
 		vkCmdBeginRenderPass(commandBuffers[i], &renderInfo, VK_SUBPASS_CONTENTS_INLINE);
+		//为command buffer绑定pipeline
 		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
 		//绑定顶点缓冲
 		VkBuffer vertexBuffers[] = { vertexBuffer };
 		VkDeviceSize offsets[] = { 0 };
 		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
-
+		vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 		//绘制
-		vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
-
+		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+		//结束renderpass
 		vkCmdEndRenderPass(commandBuffers[i]);
-
+		//结束一个command buffer
 		if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS)
 			throw std::runtime_error("Error : Failed to record command buffer!");
 	}
@@ -639,13 +687,14 @@ void Demo::createCommandBuffers()
 
 void Demo::createSyncObjects()
 {
+	//VkSemaphore  用于同步一个或多个队列
+	//VkFence      用于同步程序自身与渲染
 	imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 	renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 	inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
 
 	VkSemaphoreCreateInfo  semaphoreInfo = {};
 	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
 
 	VkFenceCreateInfo fenceInfo = {};
 	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
@@ -1064,4 +1113,77 @@ uint32_t Demo::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags propert
 	}
 
 	throw std::runtime_error("Error : Failed to find suitable memory type!");
+}
+
+void Demo::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer & buffer, VkDeviceMemory & bufferMemory)
+{
+	//创建缓冲
+	VkBufferCreateInfo bufferInfo = {};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.size = size;
+	bufferInfo.usage = usage;
+	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+	if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Error : Failed to create buffer!");
+	}
+	//获取内存需求
+	VkMemoryRequirements memRequirements = {};
+	vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
+	//分配内存
+	VkMemoryAllocateInfo allocInfo = {};
+	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocInfo.allocationSize = memRequirements.size;
+	allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+
+	if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Error : Failed to allocate memory!");
+	}
+	//绑定内存到缓冲区
+	vkBindBufferMemory(device, buffer, bufferMemory, 0);
+}
+
+void Demo::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+{
+	//创建临时command buffer
+	VkCommandBufferAllocateInfo allocInfo = {};
+	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocInfo.commandPool = commandPool;
+	allocInfo.commandBufferCount = 1;
+
+	VkCommandBuffer commandBuffer;
+	vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
+
+	//记录command
+	VkCommandBufferBeginInfo beginInfo = {};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT; //此命令只会提交一次,并会阻塞
+
+	//开始记录
+	vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+	//复制缓冲
+	VkBufferCopy copyRegion = {};
+	copyRegion.size = size;
+	copyRegion.srcOffset = 0;
+	copyRegion.dstOffset = 0;
+	vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+	//结束记录
+	vkEndCommandBuffer(commandBuffer);
+
+	//提交command
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.pCommandBuffers = &commandBuffer;
+	submitInfo.commandBufferCount = 1;
+
+	vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(graphicsQueue); //等待提交完成
+
+	//释放临时command buffer
+	vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
 }
