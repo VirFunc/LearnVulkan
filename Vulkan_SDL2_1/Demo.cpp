@@ -1,4 +1,4 @@
-#include "Demo.h"
+#include"Demo.h"
 
 Demo::Demo()
 {
@@ -10,14 +10,18 @@ Demo::~Demo()
 
 void Demo::initWindow()
 {
-	glfwInit();
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+	if (SDL_Init(SDL_INIT_VIDEO) != 0)
+	{
+		throw std::runtime_error("Error : Failed to initialize SDL2!");
+	}
 
-	window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan Demo", nullptr, nullptr);
+	window = SDL_CreateWindow("Vulkan on SDL2 Demo", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+							  WIDTH, HEIGHT, SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
 
-	glfwSetWindowUserPointer(window, this);
-	glfwSetFramebufferSizeCallback(window, framebufferResizedCallback);
+	if (!window)
+	{
+		throw std::runtime_error("Error : Failed to create window!");
+	}
 }
 
 void Demo::initVulkan()
@@ -41,38 +45,44 @@ void Demo::initVulkan()
 
 void Demo::mainLoop()
 {
-	while (!glfwWindowShouldClose(window))
+	bool quit = false;
+	SDL_Event event;
+	while (!quit)
 	{
-		glfwPollEvents();
+		while (SDL_PollEvent(&event))
+		{
+			if (event.type == SDL_QUIT)
+			{
+				quit = true;
+				break;
+			}
+
+			switch (event.type)
+			{
+			case SDL_WINDOWEVENT:
+				switch (event.window.event)
+				{
+				case SDL_WINDOWEVENT_RESIZED:
+				case SDL_WINDOWEVENT_SIZE_CHANGED:
+					framebufferResized = true;
+					break;
+				default:
+					break;
+				}
+				break;
+			default:
+				break;
+			}
+		}
+
 		drawFrame();
 	}
-	vkDeviceWaitIdle(device);
 }
 
 void Demo::cleanup()
 {
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
-	{
-		vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
-		vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
-		vkDestroyFence(device, inFlightFences[i], nullptr);
-	}
-	vkDestroyCommandPool(device, commandPool, nullptr);
-	cleanupSwapChain();
-
-	vkDestroyBuffer(device, vertexBuffer, nullptr);
-	vkFreeMemory(device, vertexBufferMemory, nullptr);
-	vkDestroyBuffer(device, indexBuffer, nullptr);
-	vkFreeMemory(device, indexBufferMemory, nullptr);
-	vkDestroyDevice(device, nullptr);
-
-	if (enableValidationLayers)
-		destroyDebugUtilsMessengerEXT(instance, callback, nullptr);
-
-	vkDestroySurfaceKHR(instance, surface, nullptr);
-	vkDestroyInstance(instance, nullptr);
-	glfwDestroyWindow(window);
-	glfwTerminate();
+	SDL_DestroyWindow(window);
+	SDL_Quit();
 }
 
 void Demo::drawFrame()
@@ -142,33 +152,37 @@ void Demo::createInstance()
 	{
 		throw std::runtime_error("Error : Validation layers required, but not available!");
 	}
-	//Vulkan应用信息
+
+	//vulkan应用信息
 	VkApplicationInfo appInfo = {};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-	appInfo.pApplicationName = "Vulkan Demo";
+	appInfo.pApplicationName = "Vulkan on SDL2 Demo";
 	appInfo.applicationVersion = VK_MAKE_VERSION(0, 0, 1);
 	appInfo.pEngineName = "AE";
 	appInfo.engineVersion = VK_MAKE_VERSION(0, 0, 1);
 	appInfo.apiVersion = VK_API_VERSION_1_0;
+
 	//实例创建信息
 	VkInstanceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pApplicationInfo = &appInfo;
+
 	//验证层
 	if (enableValidationLayers)
 	{
-		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 		createInfo.ppEnabledLayerNames = validationLayers.data();
+		createInfo.enabledExtensionCount = static_cast<uint32_t>(validationLayers.size());
 	}
 	else
 	{
+		createInfo.ppEnabledLayerNames = nullptr;
 		createInfo.enabledLayerCount = 0;
 	}
 
 	//需要的扩展
 	auto extensionRequired = std::move(getRequiredExtensions());
-	createInfo.enabledExtensionCount = static_cast<uint32_t>(extensionRequired.size());
 	createInfo.ppEnabledExtensionNames = extensionRequired.data();
+	createInfo.enabledExtensionCount = static_cast<uint32_t>(extensionRequired.size());
 
 	//被支持的扩展
 	uint32_t extentionCount = 0;
@@ -195,15 +209,6 @@ void Demo::createInstance()
 	}
 }
 
-//创建surface
-void Demo::createSurface()
-{
-	if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Error : Failed to create window surface!");
-	}
-}
-
 //设置debug回调
 void Demo::setupDebugCallback()
 {
@@ -212,19 +217,114 @@ void Demo::setupDebugCallback()
 
 	VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+	//要接受的消息的等级
 	createInfo.messageSeverity =
 		VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+	//要接受的消息的类型
 	createInfo.messageType =
 		VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-	createInfo.pfnUserCallback = debugCallback;
-	createInfo.pUserData = nullptr;
+	createInfo.pfnUserCallback = debugCallback; //回调函数
+	createInfo.pUserData = nullptr; //用户数据
 
 	if (createDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &callback) != VK_SUCCESS)
+	{
 		throw std::runtime_error("Error : Failed to setup debug callback!");
+	}
+}
+
+//创建surface
+void Demo::createSurface()
+{
+	if (SDL_Vulkan_CreateSurface(window, instance, &surface) != SDL_TRUE)
+	{
+		throw std::runtime_error("Error : Failed to create window surface!");
+	}
+}
+
+//选择合适的物理设备
+void Demo::pickPhysicalDevice()
+{
+	uint32_t deviceCount = 0;
+	//枚举物理设备
+	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+	if (deviceCount < 1)
+		throw std::runtime_error("Error : Failed to find device with Vulkan support!");
+	std::vector<VkPhysicalDevice> devices(deviceCount);
+	vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+
+	for (auto& device : devices)
+	{
+		if (isDeviceSuitable(device))
+		{
+			physicalDevice = device;
+			//获取合适的设备的队列簇
+			queueFamilyIndices = findQueueFamilies(physicalDevice);
+			break;
+		}
+	}
+
+	if (physicalDevice == VK_NULL_HANDLE)
+		throw std::runtime_error("Error : Failed to find suitable device!");
+}
+
+//创建逻辑设备
+void Demo::createLogicalDevice()
+{
+	//将要使用的队列簇
+	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+	std::set<uint32_t> uniqueQueueFamilies =
+	{
+		queueFamilyIndices.graphicsFamily.value(),
+		queueFamilyIndices.presentFamily.value()
+	};
+	float queuePrioriy = 1.0f;
+
+	for (uint32_t queueFamily : uniqueQueueFamilies)
+	{
+		VkDeviceQueueCreateInfo queueCreateInfo = {};
+		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		queueCreateInfo.queueFamilyIndex = queueFamily;
+		queueCreateInfo.queueCount = 1;
+		queueCreateInfo.pQueuePriorities = &queuePrioriy;
+		queueCreateInfos.push_back(queueCreateInfo);
+	}
+
+	//选择将要使用的物理设备功能
+	VkPhysicalDeviceFeatures deviceFeatures = {};
+
+	//创建逻辑设备
+	VkDeviceCreateInfo deviceCreateInfo = {};
+	deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
+	deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+	deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
+	deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
+	deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
+
+	if (enableValidationLayers)
+	{
+		deviceCreateInfo.ppEnabledLayerNames = validationLayers.data();
+		deviceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+	}
+	else
+	{
+		deviceCreateInfo.ppEnabledLayerNames = nullptr;
+		deviceCreateInfo.enabledLayerCount = 0;
+	}
+
+	//创建设备
+	if (vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &device) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Error : Failed to create logical device!");
+	}
+
+	//获取设备队列
+	vkGetDeviceQueue(device, queueFamilyIndices.graphicsFamily.value(), 0, &graphicsQueue);
+	vkGetDeviceQueue(device, queueFamilyIndices.presentFamily.value(), 0, &presentQueue);
 }
 
 //创建交换链
@@ -233,10 +333,14 @@ void Demo::createSwapChain()
 	//获取创建交换链所需信息
 	SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
 
+	//交换链surface格式
 	VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+	//交换链呈现模式
 	VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
+	//交换链
 	VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
 
+	//交换链中image的数量（为了兼容三缓冲，此处数量加一）
 	uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
 	if (imageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
 		imageCount = swapChainSupport.capabilities.maxImageCount;
@@ -255,22 +359,24 @@ void Demo::createSwapChain()
 	createInfo.imageExtent = extent;
 	//每一个image包含的层数
 	createInfo.imageArrayLayers = 1;
-	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; //image的用途
 
 	QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 	uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(),indices.presentFamily.value() };
 	if (indices.graphicsFamily.value() != indices.presentFamily.value())
 	{//如果graphics簇与present簇不同
-		createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-		createInfo.queueFamilyIndexCount = 2;
+		createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT; //共有
+		//如果不同，通过queueFamilyIndices来区分不同的队列簇
 		createInfo.pQueueFamilyIndices = queueFamilyIndices;
+		createInfo.queueFamilyIndexCount = 2;
 	}
 	else
 	{//如果graphics簇与present簇相同
-		createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE; //独占
 		createInfo.queueFamilyIndexCount = 0;
 		createInfo.pQueueFamilyIndices = nullptr;
 	}
+
 	//对交换链中的image所做的预变换
 	createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
 	//确定在与窗口系统中的其他窗口混合是是否使用alpha通道
@@ -280,6 +386,7 @@ void Demo::createSwapChain()
 	//当交换链发生改变时，填入上一个交换链
 	createInfo.oldSwapchain = VK_NULL_HANDLE;
 
+	//创建交换链
 	if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Error : Failed to create swap chain!");
@@ -294,7 +401,7 @@ void Demo::createSwapChain()
 	swapChainExtent = extent;
 }
 
-//创建Image view
+//创建image view
 void Demo::createImageViews()
 {
 	size_t size = swapChainImages.size();
@@ -361,7 +468,7 @@ void Demo::createRenderPass()
 	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
 		VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-
+	//创建render pass
 	VkRenderPassCreateInfo renderPassInfo = {};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 	renderPassInfo.pAttachments = &colorAttachment; //renderpass所有的附件
@@ -372,7 +479,9 @@ void Demo::createRenderPass()
 	renderPassInfo.dependencyCount = 1;
 
 	if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
+	{
 		throw std::runtime_error("Error : Failed to create render pass!");
+	}
 }
 
 void Demo::createGraphicsPipeline()
@@ -474,7 +583,8 @@ void Demo::createGraphicsPipeline()
 	VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
 	colorBlendAttachment.blendEnable = true; //是否开启blend
 	// 哪些组成可以被写入
-	colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
+	colorBlendAttachment.colorWriteMask =
+		VK_COLOR_COMPONENT_R_BIT |
 		VK_COLOR_COMPONENT_G_BIT |
 		VK_COLOR_COMPONENT_B_BIT |
 		VK_COLOR_COMPONENT_A_BIT;
@@ -529,7 +639,7 @@ void Demo::createGraphicsPipeline()
 	pipelineInfo.renderPass = renderPass;
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;	//基础管线（vulkan允许在已经存在的管线上派生新的管线）
-	pipelineInfo.basePipelineIndex = -1;				//基础管线索引
+	pipelineInfo.basePipelineIndex = -1;
 
 	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS)
 		throw std::runtime_error("Error : Failed to create graphics pipeline!");
@@ -537,6 +647,7 @@ void Demo::createGraphicsPipeline()
 	vkDestroyShaderModule(device, fragShaderModule, nullptr);
 }
 
+//创建framebuffer
 void Demo::createFramebuffers()
 {
 	//为swapchain中的每一个image创建framebuffer
@@ -559,15 +670,13 @@ void Demo::createFramebuffers()
 	}
 }
 
+//创建命令池
 void Demo::createCommandPool()
 {
-	QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
-
 	VkCommandPoolCreateInfo commandPoolInfo = {};
 	commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	commandPoolInfo.queueFamilyIndex = indices.graphicsFamily.value(); //命令池将被提交到的队列
+	commandPoolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 	commandPoolInfo.flags = 0;
-
 	if (vkCreateCommandPool(device, &commandPoolInfo, nullptr, &commandPool) != VK_SUCCESS)
 		throw std::runtime_error("Error : Failed to create command pool!");
 }
@@ -827,30 +936,6 @@ SwapChainSupportDetails Demo::querySwapChainSupport(VkPhysicalDevice & device)
 	return details;
 }
 
-//选择物理设备
-void Demo::pickPhysicalDevice()
-{
-	uint32_t deviceCount = 0;
-	//枚举物理设备
-	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
-	if (deviceCount < 1)
-		throw std::runtime_error("Error : Failed to find device with Vulkan support!");
-	std::vector<VkPhysicalDevice> devices(deviceCount);
-	vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
-
-	for (auto& device : devices)
-	{
-		if (isDeviceSuitable(device))
-		{
-			physicalDevice = device;
-			break;
-		}
-	}
-
-	if (physicalDevice == VK_NULL_HANDLE)
-		throw std::runtime_error("Error : Failed to find suitable device!");
-}
-
 //检测物理设备是否符合要求
 bool Demo::isDeviceSuitable(VkPhysicalDevice & physicalDevice)
 {
@@ -915,58 +1000,6 @@ QueueFamilyIndices Demo::findQueueFamilies(VkPhysicalDevice & physicalDevice)
 	return indices;
 }
 
-//创建逻辑设备
-void Demo::createLogicalDevice()
-{
-	//选择将要使用的队列簇
-	QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
-
-	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-	std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(),indices.presentFamily.value() };
-	float queuePriority = 1.0f;
-
-	for (uint32_t queueFamily : uniqueQueueFamilies)
-	{
-		VkDeviceQueueCreateInfo queueCreateInfo = {};
-		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		queueCreateInfo.queueFamilyIndex = queueFamily;
-		queueCreateInfo.queueCount = 1;
-		queueCreateInfo.pQueuePriorities = &queuePriority;
-		queueCreateInfos.push_back(queueCreateInfo);
-	}
-
-	//选择将要使用的物理设备功能
-	VkPhysicalDeviceFeatures deviceFeatures = {};
-
-	//创建逻辑设备
-	VkDeviceCreateInfo deviceCreateInfo = {};
-	deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-	deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
-	deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-	deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
-	deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
-	deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
-
-	if (enableValidationLayers)
-	{
-		deviceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-		deviceCreateInfo.ppEnabledLayerNames = validationLayers.data();
-	}
-	else
-	{
-		deviceCreateInfo.ppEnabledLayerNames = nullptr;
-		deviceCreateInfo.enabledLayerCount = 0;
-	}
-
-	if (vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &device) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Error : Failed to create logical device!");
-	}
-
-	vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
-	vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
-}
-
 VkSurfaceFormatKHR Demo::chooseSwapSurfaceFormat(std::vector<VkSurfaceFormatKHR>& availableFormats)
 {
 	if (availableFormats.size() == 1 && availableFormats[0].format == VK_FORMAT_UNDEFINED)
@@ -1001,7 +1034,7 @@ VkExtent2D Demo::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
 	else
 	{
 		int width, height;
-		glfwGetFramebufferSize(window, &width, &height);
+		SDL_Vulkan_GetDrawableSize(window, &width, &height);
 
 		VkExtent2D actualExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
 		actualExtent.width = std::max(capabilities.minImageExtent.width,
@@ -1015,12 +1048,10 @@ VkExtent2D Demo::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
 // 获取需要的程序需要的扩展列表
 std::vector<const char*> Demo::getRequiredExtensions()
 {
-	uint32_t glfwExtentionCount = 0;
-	const char** glfwExtentions = nullptr;
-	glfwExtentions = glfwGetRequiredInstanceExtensions(&glfwExtentionCount);
-
-	std::vector<const char*> extensions(glfwExtentions, glfwExtentions + glfwExtentionCount);
-
+	uint32_t sdlExtentionCount = 0;
+	SDL_Vulkan_GetInstanceExtensions(window, &sdlExtentionCount, nullptr);
+	std::vector<const char*> extensions(sdlExtentionCount);
+	SDL_Vulkan_GetInstanceExtensions(window, &sdlExtentionCount, extensions.data());
 	if (enableValidationLayers)
 		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
@@ -1062,12 +1093,6 @@ std::vector<char> Demo::readFile(const std::string & path)
 	inFile.read(buffer.data(), fileSize);
 	inFile.close();
 	return buffer;
-}
-
-void Demo::framebufferResizedCallback(GLFWwindow * window, int width, int height)
-{
-	auto app = reinterpret_cast<Demo*>(glfwGetWindowUserPointer(window));
-	app->framebufferResized = true;
 }
 
 VkResult createDebugUtilsMessengerEXT(VkInstance instance,

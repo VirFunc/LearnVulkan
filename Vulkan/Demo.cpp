@@ -645,7 +645,7 @@ bool Demo::checkDeviceExtionSupport(VkPhysicalDevice & physicalDevice)
 	vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data());
 
 	bool found = false;
-	for (auto& requriedExt : deviceExtentions)
+	for (auto& requriedExt : deviceExtensions)
 	{
 		found = false;
 		for (auto& availableExt : availableExtensions)
@@ -804,8 +804,8 @@ void Demo::createLogicalDevice()
 	deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
 	deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
 	deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
-	deviceCreateInfo.ppEnabledExtensionNames = deviceExtentions.data();
-	deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtentions.size());
+	deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
+	deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
 
 	if (enableValidationLayers)
 	{
