@@ -10,6 +10,7 @@
 #include<SDL2/SDL.h>
 #include<SDL2/SDL_vulkan.h>
 #include<glm/glm.hpp>
+#include<glm/gtc/matrix_transform.hpp> //矩阵变换
 
 #include<iostream>
 #include<fstream>
@@ -23,6 +24,7 @@
 #include<limits>
 #include<algorithm>
 #include<array>
+#include<chrono>
 
 struct QueueFamilyIndices
 {
@@ -73,6 +75,13 @@ struct Vertex
 
 		return attributeDescription;
 	}
+};
+
+struct UniformBufferObj
+{
+	glm::mat4 model;
+	glm::mat4 view;
+	glm::mat4 proj;
 };
 
 constexpr int WIDTH = 800;
@@ -153,6 +162,7 @@ private:
 	//被使用的 颜色/深度缓冲区/采样器 的数目
 	//整个渲染操作中对内容的处理过程
 	VkRenderPass renderPass;
+	VkDescriptorSetLayout descriptorSetLayout;
 	VkPipelineLayout pipelineLayout;
 	VkPipeline graphicsPipeline;
 	VkCommandPool commandPool;
@@ -164,6 +174,8 @@ private:
 	VkDeviceMemory vertexBufferMemory;
 	VkBuffer indexBuffer;
 	VkDeviceMemory indexBufferMemory;
+	std::vector<VkBuffer> uniformBuffers;
+	std::vector<VkDeviceMemory> uniformBuffersMemroy;
 
 	size_t currFrame = 0;
 	bool framebufferResized = false;
@@ -174,6 +186,7 @@ private:
 	void cleanup();
 
 	void drawFrame();
+	void updateUniformBuffer(uint32_t currImage);
 
 	void createInstance();
 	void setupDebugCallback();
@@ -183,11 +196,13 @@ private:
 	void createSwapChain();
 	void createImageViews();
 	void createRenderPass();
+	void createDescriptorSetLayout();
 	void createGraphicsPipeline();
 	void createFramebuffers();
 	void createCommandPool();
 	void createVertexBuffer();
 	void createIndexBuffer();
+	void createUniformBuffers();
 	void createCommandBuffers();
 	void createSyncObjects();
 

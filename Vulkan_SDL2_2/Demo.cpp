@@ -34,11 +34,13 @@ void Demo::initVulkan()
 	createSwapChain();
 	createImageViews();
 	createRenderPass();
+	createDescriptorSetLayout();
 	createGraphicsPipeline();
 	createFramebuffers();
 	createCommandPool();
 	createVertexBuffer();
 	createIndexBuffer();
+	createUniformBuffers();
 	createCommandBuffers();
 	createSyncObjects();
 }
@@ -90,10 +92,18 @@ void Demo::cleanup()
 	vkDestroyCommandPool(device, commandPool, nullptr);
 	cleanupSwapChain();
 
+	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 	vkDestroyBuffer(device, vertexBuffer, nullptr);
 	vkFreeMemory(device, vertexBufferMemory, nullptr);
 	vkDestroyBuffer(device, indexBuffer, nullptr);
 	vkFreeMemory(device, indexBufferMemory, nullptr);
+
+	for (size_t i = 0; i < swapChainImages.size(); ++i)
+	{
+		vkDestroyBuffer(device, uniformBuffers[i], nullptr);
+		vkFreeMemory(device, uniformBuffersMemroy[i], nullptr);
+	}
+
 	vkDestroyDevice(device, nullptr);
 
 	if (enableValidationLayers)
@@ -120,7 +130,12 @@ void Demo::drawFrame()
 		return;
 	}
 	else if (result != VK_SUCCESS)
+	{
 		throw std::runtime_error("Error : Failed to acquire next image!");
+	}
+
+	//更新unifom buffer
+	updateUniformBuffer(imageIndex);
 
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -163,6 +178,32 @@ void Demo::drawFrame()
 		throw std::runtime_error("Failed to present swap chain image!");
 
 	currFrame = (currFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+}
+
+//更新uniform buffer
+void Demo::updateUniformBuffer(uint32_t currImage)
+{
+	//第一次运行的时刻
+	static auto startTime = std::chrono::high_resolution_clock::now();
+
+	auto currTime = std::chrono::high_resolution_clock::now(); //这一帧的时刻
+	float time = std::chrono::duration<float, std::chrono::seconds::period>(currTime - startTime).count();
+
+	UniformBufferObj ubo = {};
+	ubo.model = glm::mat4(1.0f);
+	ubo.model = glm::rotate(ubo.model, time*glm::radians(90.f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.view = glm::mat4(1.0f);
+	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height,
+								0.1f, 10.0f);
+	//注意，glm原本为GL所设计，GL与Vulkan的坐标系系统，y轴方向恰好相反
+	ubo.proj[1][1] *= -1;
+
+	//复制ubo到缓冲区中
+	void* data;
+	vkMapMemory(device, uniformBuffersMemroy[currImage], 0, sizeof(ubo), 0, &data);
+	memcpy(data, &ubo, sizeof(ubo));
+	vkUnmapMemory(device, uniformBuffersMemroy[currImage]);
 }
 
 //创建实例
@@ -504,6 +545,28 @@ void Demo::createRenderPass()
 	}
 }
 
+//创建描述符
+void Demo::createDescriptorSetLayout()
+{
+	VkDescriptorSetLayoutBinding uboLayoutBinding = {};
+	uboLayoutBinding.binding = 0; //对应shader中的binding
+	uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; //描述符类型
+	uboLayoutBinding.descriptorCount = 1;
+	uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT; //描述符被引用的shader stage
+	uboLayoutBinding.pImmutableSamplers = nullptr;
+
+	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
+	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutInfo.pBindings = &uboLayoutBinding;
+	layoutInfo.bindingCount = 1;
+
+	if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Error : Failed to create descriptor set layout!");
+	}
+}
+
+//创建渲染管线
 void Demo::createGraphicsPipeline()
 {
 	//加载着色器
@@ -634,8 +697,8 @@ void Demo::createGraphicsPipeline()
 	//管线布局
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 0;
-	pipelineLayoutInfo.pSetLayouts = nullptr;
+	pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout; //描述符布局
+	pipelineLayoutInfo.setLayoutCount = 1;
 	pipelineLayoutInfo.pushConstantRangeCount = 0;
 	pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
@@ -747,6 +810,22 @@ void Demo::createIndexBuffer()
 
 	vkDestroyBuffer(device, stagingBuffer, nullptr);
 	vkFreeMemory(device, stagingBufferMemory, nullptr);
+}
+
+//创建uniform buffer
+void Demo::createUniformBuffers()
+{
+	VkDeviceSize bufferSize = sizeof(UniformBufferObj);
+
+	uniformBuffers.resize(swapChainImages.size());
+	uniformBuffersMemroy.resize(swapChainImages.size());
+
+	for (size_t i = 0; i < swapChainImages.size(); ++i)
+	{
+		createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+					 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+					 uniformBuffers[i], uniformBuffersMemroy[i]);
+	}
 }
 
 void Demo::createCommandBuffers()
