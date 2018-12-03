@@ -41,6 +41,8 @@ void Demo::initVulkan()
 	createVertexBuffer();
 	createIndexBuffer();
 	createUniformBuffers();
+	createDescriptorPool();
+	createDescriptorSets();
 	createCommandBuffers();
 	createSyncObjects();
 }
@@ -93,6 +95,7 @@ void Demo::cleanup()
 	cleanupSwapChain();
 
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
+	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 	vkDestroyBuffer(device, vertexBuffer, nullptr);
 	vkFreeMemory(device, vertexBufferMemory, nullptr);
 	vkDestroyBuffer(device, indexBuffer, nullptr);
@@ -545,7 +548,7 @@ void Demo::createRenderPass()
 	}
 }
 
-//创建描述符
+//创建描述符布局
 void Demo::createDescriptorSetLayout()
 {
 	VkDescriptorSetLayoutBinding uboLayoutBinding = {};
@@ -641,7 +644,7 @@ void Demo::createGraphicsPipeline()
 	rasterizer.polygonMode = VK_POLYGON_MODE_FILL; //多边形填充模式
 	rasterizer.lineWidth = 1.0f; //线宽
 	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT; //面剔除模式
-	rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE; //哪面为正面
+	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE; //哪面为正面
 	//使光栅器通过 增加一个常量/根据图元的斜率 来改变其深度值
 	rasterizer.depthBiasEnable = false;
 	rasterizer.depthBiasConstantFactor = 0.0f;
@@ -764,6 +767,48 @@ void Demo::createCommandPool()
 		throw std::runtime_error("Error : Failed to create command pool!");
 }
 
+//创建描述符集合
+void Demo::createDescriptorSets()
+{
+	std::vector<VkDescriptorSetLayout> layouts(swapChainImages.size(), descriptorSetLayout);
+
+	VkDescriptorSetAllocateInfo allocInfo = {};
+	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocInfo.descriptorPool = descriptorPool;
+	allocInfo.pSetLayouts = layouts.data();
+	allocInfo.descriptorSetCount = static_cast<uint32_t>(swapChainImages.size());
+
+	descriptorSets.resize(swapChainImages.size());
+	if (vkAllocateDescriptorSets(device, &allocInfo, descriptorSets.data()) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Error : Failed to allocate descriptor sets!");
+	}
+
+	for (size_t i = 0; i < swapChainImages.size(); ++i)
+	{
+		VkDescriptorBufferInfo bufferInfo = {};
+		bufferInfo.buffer = uniformBuffers[i]; //描述符所引用的buffer
+		bufferInfo.offset = 0; //偏移量
+		bufferInfo.range = sizeof(UniformBufferObj); //buffer的范围
+
+		//配置描述符
+		VkWriteDescriptorSet descriptorWrite = {};
+		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrite.dstSet = descriptorSets[i]; //将要修改的描述符
+		descriptorWrite.dstBinding = 0; //与shader的binding对应
+		descriptorWrite.dstArrayElement = 0; //要修改的描述符在descriptorSet中的索引
+		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; //要修改的修饰符的类型
+		descriptorWrite.descriptorCount = 1; //描述符的数量
+		descriptorWrite.pBufferInfo = &bufferInfo; //描述符引用的buffer的信息
+		descriptorWrite.pImageInfo = nullptr; //描述符引用image的信息（此处没有用到）
+		descriptorWrite.pTexelBufferView = nullptr;
+
+		//更新描述符集合(descriptorSets)
+		//                             写入描述符           复制描述符
+		vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
+	}
+}
+
 void Demo::createVertexBuffer()
 {
 	VkDeviceSize bufferSize = sizeof(decltype(vertices)::value_type)*vertices.size();
@@ -828,6 +873,27 @@ void Demo::createUniformBuffers()
 	}
 }
 
+//创建描述符池(descriptorPool)
+void Demo::createDescriptorPool()
+{
+	//描述符池的大小
+	VkDescriptorPoolSize poolSize = {};
+	poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSize.descriptorCount = static_cast<uint32_t>(swapChainImages.size()); //每一个image都有一个描述符
+
+	VkDescriptorPoolCreateInfo poolInfo = {};
+	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolInfo.pPoolSizes = &poolSize; //描述符池大小
+	poolInfo.poolSizeCount = 1; //描述符大小的数量
+	poolInfo.maxSets = static_cast<uint32_t>(swapChainImages.size());
+
+	//创建描述符池
+	if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Error : Failed to create descriptor pool!");
+	}
+}
+
 void Demo::createCommandBuffers()
 {
 	//Command Buffer
@@ -885,6 +951,12 @@ void Demo::createCommandBuffers()
 		VkDeviceSize offsets[] = { 0 };
 		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
 		vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+		//绑定描述符
+		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
+								0, //第一个描述符集合的索引 
+								1, //描述符的数量
+								&descriptorSets[i], //描述符数组
+								0, nullptr);
 		//绘制
 		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 		//结束renderpass

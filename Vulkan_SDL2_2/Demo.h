@@ -162,7 +162,6 @@ private:
 	//被使用的 颜色/深度缓冲区/采样器 的数目
 	//整个渲染操作中对内容的处理过程
 	VkRenderPass renderPass;
-	VkDescriptorSetLayout descriptorSetLayout;
 	VkPipelineLayout pipelineLayout;
 	VkPipeline graphicsPipeline;
 	VkCommandPool commandPool;
@@ -176,6 +175,9 @@ private:
 	VkDeviceMemory indexBufferMemory;
 	std::vector<VkBuffer> uniformBuffers;
 	std::vector<VkDeviceMemory> uniformBuffersMemroy;
+	VkDescriptorSetLayout descriptorSetLayout;
+	VkDescriptorPool descriptorPool;
+	std::vector<VkDescriptorSet> descriptorSets;
 
 	size_t currFrame = 0;
 	bool framebufferResized = false;
@@ -200,9 +202,11 @@ private:
 	void createGraphicsPipeline();
 	void createFramebuffers();
 	void createCommandPool();
+	void createDescriptorSets();
 	void createVertexBuffer();
 	void createIndexBuffer();
 	void createUniformBuffers();
+	void createDescriptorPool();
 	void createCommandBuffers();
 	void createSyncObjects();
 
