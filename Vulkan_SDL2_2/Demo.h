@@ -1,13 +1,14 @@
 /*************************************************/
-/*这是learnVulkan中第二个项目*/
-/*基于GLFW*/
-/*后续的项目会转至SDL2进行*/
-/*顶点数据先存储于vecotr中，使用前复制到GPU内存中*/
-/*并且加入了顶点索引，顶点索引也会复制到GPU内存中*/
+/*这是learnVulkan的第四个项目*/
+/*基于SDL2*/
+/*这个项目将会加入Uniform buffers*/
+/*将会使用Resource descriptors(资源描述符)*/
 /*************************************************/
 #pragma once
-#define GLFW_INCLUDE_VULKAN
-#include<GLFW/glfw3.h>
+#include<vulkan/vulkan.h>
+#define SDL_MAIN_HANDLED
+#include<SDL2/SDL.h>
+#include<SDL2/SDL_vulkan.h>
 #include<glm/glm.hpp>
 
 #include<iostream>
@@ -132,11 +133,12 @@ public:
 	Demo();
 	~Demo();
 private:
-	GLFWwindow* window = nullptr;
+	SDL_Window* window = nullptr;
 	VkInstance instance = VK_NULL_HANDLE;
 	VkDebugUtilsMessengerEXT callback = VK_NULL_HANDLE;
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 	VkDevice device = VK_NULL_HANDLE;
+	QueueFamilyIndices queueFamilyIndices;
 	VkQueue graphicsQueue = VK_NULL_HANDLE;
 	VkQueue presentQueue = VK_NULL_HANDLE;
 	VkSurfaceKHR surface = VK_NULL_HANDLE;
@@ -162,7 +164,6 @@ private:
 	VkDeviceMemory vertexBufferMemory;
 	VkBuffer indexBuffer;
 	VkDeviceMemory indexBufferMemory;
-
 
 	size_t currFrame = 0;
 	bool framebufferResized = false;
@@ -217,5 +218,4 @@ private:
 		void* pUserData);
 
 	static std::vector<char> readFile(const std::string& path);
-	static void framebufferResizedCallback(GLFWwindow* window, int width, int height);
 };
