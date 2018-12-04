@@ -40,6 +40,7 @@ void Demo::initVulkan()
 	createCommandPool();
 	createTextureImage();
 	createTextureImageView();
+	createTextureSampler();
 	createVertexBuffer();
 	createIndexBuffer();
 	createUniformBuffers();
@@ -98,6 +99,7 @@ void Demo::cleanup()
 
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+	vkDestroySampler(device, textureSampler, nullptr);
 	vkDestroyImageView(device, textureImageView, nullptr);
 	vkDestroyImage(device, textureImage, nullptr);
 	vkFreeMemory(device, textureImageMemory, nullptr);
@@ -201,7 +203,7 @@ void Demo::updateUniformBuffer(uint32_t currImage)
 	ubo.model = glm::mat4(1.0f);
 	ubo.model = glm::rotate(ubo.model, time*glm::radians(90.f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.view = glm::mat4(1.0f);
-	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.view = glm::lookAt(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height,
 								0.1f, 10.0f);
 	//注意，glm原本为GL所设计，GL与Vulkan的坐标系系统，y轴方向恰好相反
@@ -364,6 +366,7 @@ void Demo::createLogicalDevice()
 
 	//选择将要使用的物理设备功能
 	VkPhysicalDeviceFeatures deviceFeatures = {};
+	deviceFeatures.samplerAnisotropy = VK_TRUE; //开启各项异性过滤
 
 	//创建逻辑设备
 	VkDeviceCreateInfo deviceCreateInfo = {};
@@ -545,10 +548,22 @@ void Demo::createDescriptorSetLayout()
 	uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT; //描述符被引用的shader stage
 	uboLayoutBinding.pImmutableSamplers = nullptr;
 
+	VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
+	samplerLayoutBinding.binding = 1;
+	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+	samplerLayoutBinding.descriptorCount = 1;
+	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	samplerLayoutBinding.pImmutableSamplers = nullptr;
+
+	VkDescriptorSetLayoutBinding bindings[] =
+	{
+		uboLayoutBinding, samplerLayoutBinding
+	};
+
 	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
 	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutInfo.pBindings = &uboLayoutBinding;
-	layoutInfo.bindingCount = 1;
+	layoutInfo.pBindings = bindings;
+	layoutInfo.bindingCount = 2;
 
 	if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
 	{
@@ -820,6 +835,32 @@ void Demo::createTextureImageView()
 	}
 }
 
+void Demo::createTextureSampler()
+{
+	VkSamplerCreateInfo samplerInfo = {};
+	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	samplerInfo.minFilter = VK_FILTER_LINEAR;
+	samplerInfo.magFilter = VK_FILTER_LINEAR;
+	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.anisotropyEnable = VK_TRUE; //各向异性
+	samplerInfo.maxAnisotropy = 16; //最大各向异性采样数
+	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK; //边缘颜色(不透明的黑色)
+	samplerInfo.unnormalizedCoordinates = VK_FALSE; //是否采样图片原坐标([0,width],[0,height])
+	samplerInfo.compareEnable = VK_FALSE; //是否开启比较(如果开启，纹理会先与一个值进行比较)
+	samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS; //比较所使用的运算符
+	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR; //mip贴图相关
+	samplerInfo.mipLodBias = 0.0f;
+	samplerInfo.minLod = 0.0f;
+	samplerInfo.maxLod = 0.0f;
+
+	if (vkCreateSampler(device, &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Error : Failed to create sampler!");
+	}
+}
+
 void Demo::createVertexBuffer()
 {
 	VkDeviceSize bufferSize = sizeof(decltype(vertices)::value_type)*vertices.size();
@@ -888,14 +929,16 @@ void Demo::createUniformBuffers()
 void Demo::createDescriptorPool()
 {
 	//描述符池的大小
-	VkDescriptorPoolSize poolSize = {};
-	poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSize.descriptorCount = static_cast<uint32_t>(swapChainImages.size()); //每一个image都有一个描述符
+	std::array<VkDescriptorPoolSize, 2> poolSizes;
+	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSizes[0].descriptorCount = static_cast<uint32_t>(swapChainImages.size()); //每一个image都有一个描述符
+	poolSizes[1].type = VK_DESCRIPTOR_TYPE_SAMPLER;
+	poolSizes[1].descriptorCount = static_cast<uint32_t>(swapChainImages.size());
 
 	VkDescriptorPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	poolInfo.pPoolSizes = &poolSize; //描述符池大小
-	poolInfo.poolSizeCount = 1; //描述符大小的数量
+	poolInfo.pPoolSizes = poolSizes.data(); //描述符池大小
+	poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size()); //描述符大小的数量
 	poolInfo.maxSets = static_cast<uint32_t>(swapChainImages.size());
 
 	//创建描述符池
@@ -929,21 +972,38 @@ void Demo::createDescriptorSets()
 		bufferInfo.offset = 0; //偏移量
 		bufferInfo.range = sizeof(UniformBufferObj); //buffer的范围
 
+		VkDescriptorImageInfo imageInfo = {};
+		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		imageInfo.imageView = textureImageView;
+		imageInfo.sampler = textureSampler;
+
 		//配置描述符
-		VkWriteDescriptorSet descriptorWrite = {};
-		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrite.dstSet = descriptorSets[i]; //将要修改的描述符
-		descriptorWrite.dstBinding = 0; //与shader的binding对应
-		descriptorWrite.dstArrayElement = 0; //要修改的描述符在descriptorSet中的索引
-		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; //要修改的修饰符的类型
-		descriptorWrite.descriptorCount = 1; //描述符的数量
-		descriptorWrite.pBufferInfo = &bufferInfo; //描述符引用的buffer的信息
-		descriptorWrite.pImageInfo = nullptr; //描述符引用image的信息（此处没有用到）
-		descriptorWrite.pTexelBufferView = nullptr;
+		std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
+		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrites[0].dstSet = descriptorSets[i]; //将要修改的描述符
+		descriptorWrites[0].dstBinding = 0; //与shader的binding对应
+		descriptorWrites[0].dstArrayElement = 0; //要修改的描述符在descriptorSet中的索引
+		descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; //要修改的修饰符的类型
+		descriptorWrites[0].descriptorCount = 1; //描述符的数量
+		descriptorWrites[0].pBufferInfo = &bufferInfo; //描述符引用的buffer的信息
+		descriptorWrites[0].pImageInfo = nullptr; //描述符引用image的信息（此处没有用到）
+		descriptorWrites[0].pTexelBufferView = nullptr;
+
+		descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrites[1].dstSet = descriptorSets[i]; //将要修改的描述符
+		descriptorWrites[1].dstBinding = 1; //与shader的binding对应
+		descriptorWrites[1].dstArrayElement = 0; //要修改的描述符在descriptorSet中的索引
+		descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER; //要修改的修饰符的类型
+		descriptorWrites[1].descriptorCount = 1; //描述符的数量
+		descriptorWrites[1].pBufferInfo = nullptr;
+		descriptorWrites[1].pImageInfo = &imageInfo;
+		descriptorWrites[1].pTexelBufferView = nullptr;
 
 		//更新描述符集合(descriptorSets)
 		//                             写入描述符           复制描述符
-		vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
+		vkUpdateDescriptorSets(device,
+							   static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(),
+							   0, nullptr);
 	}
 }
 
@@ -1179,11 +1239,15 @@ bool Demo::isDeviceSuitable(VkPhysicalDevice & physicalDevice)
 	//检测物理设备扩展是否支持
 	bool deviceExtensionSuit = checkDeviceExtionSupport(physicalDevice);
 
+	//检测物理设备功能是否支持
+	VkPhysicalDeviceFeatures supportedFeatures;
+	vkGetPhysicalDeviceFeatures(physicalDevice, &supportedFeatures);
+
 	//检测交换链是否支持
 	SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
 	bool swapChainSuit = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 
-	if (queueFamilySuit && deviceExtensionSuit && swapChainSuit)
+	if (queueFamilySuit && deviceExtensionSuit && swapChainSuit && supportedFeatures.samplerAnisotropy)
 	{
 		std::cout << std::endl << "[ Physical device ] :" << std::endl
 			<< "\tDevice name : " << deviceProperties.deviceName << std::endl;

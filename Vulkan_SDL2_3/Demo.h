@@ -51,6 +51,7 @@ struct Vertex
 {
 	glm::vec2 pos;
 	glm::vec3 color;
+	glm::vec2 texCoord;
 
 	//返回Vertex对于的顶点绑定(VertexInputBinding)描述
 	static VkVertexInputBindingDescription getBindingDescription()
@@ -63,9 +64,9 @@ struct Vertex
 	}
 
 	//返回顶点数据中每个 属性的描述 
-	static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescription()
+	static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescription()
 	{
-		std::array<VkVertexInputAttributeDescription, 2> attributeDescription = {};
+		std::array<VkVertexInputAttributeDescription, 3> attributeDescription = {};
 		attributeDescription[0].binding = 0; //顶点数据的绑定点
 		attributeDescription[0].location = 0; //在vertex shader中的location
 		attributeDescription[0].format = VK_FORMAT_R32G32_SFLOAT; //属性的数据格式
@@ -75,6 +76,11 @@ struct Vertex
 		attributeDescription[1].location = 1;
 		attributeDescription[1].format = VK_FORMAT_R32G32B32_SFLOAT;
 		attributeDescription[1].offset = offsetof(Vertex, color);
+
+		attributeDescription[2].binding = 0;
+		attributeDescription[2].location = 2;
+		attributeDescription[2].format = VK_FORMAT_R32G32_SFLOAT;
+		attributeDescription[2].offset = offsetof(Vertex, texCoord);
 
 		return attributeDescription;
 	}
@@ -93,10 +99,10 @@ constexpr int HEIGHT = 600;
 
 const std::vector<Vertex> vertices =
 {
-	{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-	{{ 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-	{{ 0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}},
-	{{-0.5f,  0.5f}, {1.0f, 1.0f, 1.0f}}
+	{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+	{{ 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+	{{ 0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+	{{-0.5f,  0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
 };
 
 const std::vector<uint16_t> indices =
@@ -181,6 +187,7 @@ private:
 	VkImage textureImage;
 	VkImage textureImageView;
 	VkDeviceMemory textureImageMemory;
+	VkSampler textureSampler;
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkDescriptorPool descriptorPool;
 	std::vector<VkDescriptorSet> descriptorSets;
@@ -208,13 +215,14 @@ private:
 	void createGraphicsPipeline();
 	void createFramebuffers();
 	void createCommandPool();
-	void createDescriptorSets();
 	void createTextureImage();
 	void createTextureImageView();
+	void createTextureSampler();
 	void createVertexBuffer();
 	void createIndexBuffer();
 	void createUniformBuffers();
 	void createDescriptorPool();
+	void createDescriptorSets();
 	void createCommandBuffers();
 	void createSyncObjects();
 
