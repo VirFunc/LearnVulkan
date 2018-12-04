@@ -3,6 +3,8 @@
 /*基于SDL2*/
 /*这个项目将会加入Uniform buffers*/
 /*将会使用Resource descriptors(资源描述符)*/
+/*通过uniform buffer传递model，view，projection矩阵*/
+/*实现模型的旋转*/
 /*************************************************/
 #pragma once
 #include<vulkan/vulkan.h>

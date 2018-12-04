@@ -767,48 +767,6 @@ void Demo::createCommandPool()
 		throw std::runtime_error("Error : Failed to create command pool!");
 }
 
-//创建描述符集合
-void Demo::createDescriptorSets()
-{
-	std::vector<VkDescriptorSetLayout> layouts(swapChainImages.size(), descriptorSetLayout);
-
-	VkDescriptorSetAllocateInfo allocInfo = {};
-	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocInfo.descriptorPool = descriptorPool;
-	allocInfo.pSetLayouts = layouts.data();
-	allocInfo.descriptorSetCount = static_cast<uint32_t>(swapChainImages.size());
-
-	descriptorSets.resize(swapChainImages.size());
-	if (vkAllocateDescriptorSets(device, &allocInfo, descriptorSets.data()) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Error : Failed to allocate descriptor sets!");
-	}
-
-	for (size_t i = 0; i < swapChainImages.size(); ++i)
-	{
-		VkDescriptorBufferInfo bufferInfo = {};
-		bufferInfo.buffer = uniformBuffers[i]; //描述符所引用的buffer
-		bufferInfo.offset = 0; //偏移量
-		bufferInfo.range = sizeof(UniformBufferObj); //buffer的范围
-
-		//配置描述符
-		VkWriteDescriptorSet descriptorWrite = {};
-		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrite.dstSet = descriptorSets[i]; //将要修改的描述符
-		descriptorWrite.dstBinding = 0; //与shader的binding对应
-		descriptorWrite.dstArrayElement = 0; //要修改的描述符在descriptorSet中的索引
-		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; //要修改的修饰符的类型
-		descriptorWrite.descriptorCount = 1; //描述符的数量
-		descriptorWrite.pBufferInfo = &bufferInfo; //描述符引用的buffer的信息
-		descriptorWrite.pImageInfo = nullptr; //描述符引用image的信息（此处没有用到）
-		descriptorWrite.pTexelBufferView = nullptr;
-
-		//更新描述符集合(descriptorSets)
-		//                             写入描述符           复制描述符
-		vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
-	}
-}
-
 void Demo::createVertexBuffer()
 {
 	VkDeviceSize bufferSize = sizeof(decltype(vertices)::value_type)*vertices.size();
@@ -891,6 +849,48 @@ void Demo::createDescriptorPool()
 	if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Error : Failed to create descriptor pool!");
+	}
+}
+
+//创建描述符集合
+void Demo::createDescriptorSets()
+{
+	std::vector<VkDescriptorSetLayout> layouts(swapChainImages.size(), descriptorSetLayout);
+
+	VkDescriptorSetAllocateInfo allocInfo = {};
+	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocInfo.descriptorPool = descriptorPool;
+	allocInfo.pSetLayouts = layouts.data();
+	allocInfo.descriptorSetCount = static_cast<uint32_t>(swapChainImages.size());
+
+	descriptorSets.resize(swapChainImages.size());
+	if (vkAllocateDescriptorSets(device, &allocInfo, descriptorSets.data()) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Error : Failed to allocate descriptor sets!");
+	}
+
+	for (size_t i = 0; i < swapChainImages.size(); ++i)
+	{
+		VkDescriptorBufferInfo bufferInfo = {};
+		bufferInfo.buffer = uniformBuffers[i]; //描述符所引用的buffer
+		bufferInfo.offset = 0; //偏移量
+		bufferInfo.range = sizeof(UniformBufferObj); //buffer的范围
+
+		//配置描述符
+		VkWriteDescriptorSet descriptorWrite = {};
+		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrite.dstSet = descriptorSets[i]; //将要修改的描述符
+		descriptorWrite.dstBinding = 0; //与shader的binding对应
+		descriptorWrite.dstArrayElement = 0; //要修改的描述符在descriptorSet中的索引
+		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; //要修改的修饰符的类型
+		descriptorWrite.descriptorCount = 1; //描述符的数量
+		descriptorWrite.pBufferInfo = &bufferInfo; //描述符引用的buffer的信息
+		descriptorWrite.pImageInfo = nullptr; //描述符引用image的信息（此处没有用到）
+		descriptorWrite.pTexelBufferView = nullptr;
+
+		//更新描述符集合(descriptorSets)
+		//                             写入描述符           复制描述符
+		vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
 	}
 }
 
