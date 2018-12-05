@@ -185,7 +185,7 @@ private:
 	std::vector<VkBuffer> uniformBuffers;
 	std::vector<VkDeviceMemory> uniformBuffersMemroy;
 	VkImage textureImage;
-	VkImage textureImageView;
+	VkImageView textureImageView;
 	VkDeviceMemory textureImageMemory;
 	VkSampler textureSampler;
 	VkDescriptorSetLayout descriptorSetLayout;

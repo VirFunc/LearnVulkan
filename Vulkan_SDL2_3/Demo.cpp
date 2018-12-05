@@ -982,7 +982,7 @@ void Demo::createDescriptorSets()
 		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		descriptorWrites[0].dstSet = descriptorSets[i]; //将要修改的描述符
 		descriptorWrites[0].dstBinding = 0; //与shader的binding对应
-		descriptorWrites[0].dstArrayElement = 0; //要修改的描述符在descriptorSet中的索引
+		descriptorWrites[0].dstArrayElement = 0; 
 		descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; //要修改的修饰符的类型
 		descriptorWrites[0].descriptorCount = 1; //描述符的数量
 		descriptorWrites[0].pBufferInfo = &bufferInfo; //描述符引用的buffer的信息
@@ -992,7 +992,7 @@ void Demo::createDescriptorSets()
 		descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		descriptorWrites[1].dstSet = descriptorSets[i]; //将要修改的描述符
 		descriptorWrites[1].dstBinding = 1; //与shader的binding对应
-		descriptorWrites[1].dstArrayElement = 0; //要修改的描述符在descriptorSet中的索引
+		descriptorWrites[1].dstArrayElement = 0; 
 		descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER; //要修改的修饰符的类型
 		descriptorWrites[1].descriptorCount = 1; //描述符的数量
 		descriptorWrites[1].pBufferInfo = nullptr;
