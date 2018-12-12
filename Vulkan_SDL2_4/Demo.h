@@ -1,8 +1,9 @@
 /*************************************************/
 /*这是learnVulkan的第六个项目*/
 /*基于SDL2*/
-/*这个项目将会在上一个项目的基础上*/
-/*加入深度缓冲*/
+/*这个项目是一个分支*/
+/*是为了加入模型读取功能而设置得实验性项目*/
+/*添加第三方库FBX SDK用于读取FBX模型*/
 /*************************************************/
 #pragma once
 #include<vulkan/vulkan.h>
@@ -29,6 +30,8 @@
 #include<array>
 #include<chrono>
 
+#include"Mesh.h"
+
 struct QueueFamilyIndices
 {
 	std::optional<uint32_t> graphicsFamily = -1;
@@ -47,45 +50,6 @@ struct SwapChainSupportDetails
 	std::vector<VkPresentModeKHR> presentModes;
 };
 
-struct Vertex
-{
-	glm::vec3 pos;
-	glm::vec3 color;
-	glm::vec2 texCoord;
-
-	//返回Vertex对于的顶点绑定(VertexInputBinding)描述
-	static VkVertexInputBindingDescription getBindingDescription()
-	{
-		VkVertexInputBindingDescription bindingDescription = {};
-		bindingDescription.binding = 0; //顶点数据的绑定点
-		bindingDescription.stride = sizeof(Vertex); //两个Vertex之间的间隔
-		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-		return bindingDescription;
-	}
-
-	//返回顶点数据中每个 属性的描述 
-	static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescription()
-	{
-		std::array<VkVertexInputAttributeDescription, 3> attributeDescription = {};
-		attributeDescription[0].binding = 0; //顶点数据的绑定点
-		attributeDescription[0].location = 0; //在vertex shader中的location
-		attributeDescription[0].format = VK_FORMAT_R32G32B32_SFLOAT; //属性的数据格式
-		attributeDescription[0].offset = offsetof(Vertex, pos); //属性相对于一个Vertex起始位置的便宜量
-
-		attributeDescription[1].binding = 0;
-		attributeDescription[1].location = 1;
-		attributeDescription[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-		attributeDescription[1].offset = offsetof(Vertex, color);
-
-		attributeDescription[2].binding = 0;
-		attributeDescription[2].location = 2;
-		attributeDescription[2].format = VK_FORMAT_R32G32_SFLOAT;
-		attributeDescription[2].offset = offsetof(Vertex, texCoord);
-
-		return attributeDescription;
-	}
-};
-
 struct UniformBufferObj
 {
 	glm::mat4 model;
@@ -96,25 +60,6 @@ struct UniformBufferObj
 constexpr int WIDTH = 800;
 constexpr int HEIGHT = 600;
 #define MAX_FRAMES_IN_FLIGHT 2
-
-const std::vector<Vertex> vertices =
-{
-	{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-	{{ 0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-	{{ 0.5f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-	{{-0.5f,  0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
-
-	{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-	{{ 0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-	{{ 0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-	{{-0.5f,  0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
-};
-
-const std::vector<uint16_t> indices =
-{
-	0, 1, 2, 2, 3, 0,
-	4, 5, 6, 6, 7, 4
-};
 
 //将打开的验证层
 const std::vector<const char*> validationLayers =
@@ -204,6 +149,8 @@ private:
 	size_t currFrame = 0;
 	bool framebufferResized = false;
 
+	Mesh* mesh;//读取网格
+
 	void initWindow();
 	void initVulkan();
 	void mainLoop();
@@ -229,7 +176,6 @@ private:
 	void createTextureImageView();
 	void createTextureSampler();
 	void createVertexBuffer();
-	void createIndexBuffer();
 	void createUniformBuffers();
 	void createDescriptorPool();
 	void createDescriptorSets();

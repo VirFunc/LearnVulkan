@@ -2,10 +2,33 @@
 
 Demo::Demo()
 {
+	const char* fileName = "Model/test.fbx";
+	FbxManager* manager = FbxManager::Create();
+	FbxIOSettings* iosettings = FbxIOSettings::Create(manager, IOSROOT);
+	FbxImporter* importer = FbxImporter::Create(manager, "");
+	if (!importer->Initialize(fileName, -1, iosettings))
+	{
+		std::cerr << "Failed to initialize importer on file [ " << fileName << " ]" << std::endl;
+		std::cerr << "Error : [ importer ] :" << std::endl
+			<< importer->GetStatus().GetErrorString() << std::endl;
+	}
+	FbxScene* scene = FbxScene::Create(manager, "MyScene");
+	importer->Import(scene);
+	importer->Destroy();
+	FbxNode* root = scene->GetRootNode();
+
+	FbxNode* node = root->GetChild(0);
+	mesh = Mesh::Create(node);
+	for (int i = 0; i < mesh->getVertexCount(); ++i)
+	{
+		std::cout << mesh->getVertices()[i] << std::endl<<std::endl;
+	}
+	manager->Destroy();
 }
 
 Demo::~Demo()
 {
+	delete mesh;
 }
 
 void Demo::initWindow()
@@ -43,7 +66,6 @@ void Demo::initVulkan()
 	createTextureImageView();
 	createTextureSampler();
 	createVertexBuffer();
-	createIndexBuffer();
 	createUniformBuffers();
 	createDescriptorPool();
 	createDescriptorSets();
@@ -202,7 +224,7 @@ void Demo::updateUniformBuffer(uint32_t currImage)
 	ubo.model = glm::mat4(1.0f);
 	ubo.model = glm::rotate(ubo.model, time*glm::radians(90.f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.view = glm::mat4(1.0f);
-	ubo.view = glm::lookAt(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height,
 								0.1f, 10.0f);
 	//注意，glm原本为GL所设计，GL与Vulkan的坐标系系统，y轴方向恰好相反
@@ -815,7 +837,8 @@ void Demo::createTextureImage()
 {
 	//读取texture
 	int texWidth, texHeight, texChannels;
-	stbi_uc* pixels = stbi_load("Image/Hz.png", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+	stbi_set_flip_vertically_on_load(true);
+	stbi_uc* pixels = stbi_load("Image/tex.png", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 	if (!pixels)
 	{
 		throw std::runtime_error("Error : Failed to load texture image!");
@@ -904,7 +927,7 @@ void Demo::createTextureSampler()
 
 void Demo::createVertexBuffer()
 {
-	VkDeviceSize bufferSize = sizeof(decltype(vertices)::value_type)*vertices.size();
+	VkDeviceSize bufferSize = sizeof(Mesh::vertexType)*mesh->getVertexCount();
 	//临时缓冲
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;
@@ -914,7 +937,7 @@ void Demo::createVertexBuffer()
 	//内存映射
 	void* data;
 	vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-	memcpy(data, vertices.data(), (size_t)bufferSize);
+	memcpy(data, mesh->getVertices(), size_t(bufferSize));
 	vkUnmapMemory(device, stagingBufferMemory);
 
 	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
@@ -923,29 +946,6 @@ void Demo::createVertexBuffer()
 	copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
 
 	//清理临时缓冲
-	vkDestroyBuffer(device, stagingBuffer, nullptr);
-	vkFreeMemory(device, stagingBufferMemory, nullptr);
-}
-
-void Demo::createIndexBuffer()
-{
-	VkDeviceSize bufferSize = sizeof(decltype(indices)::value_type)*indices.size();
-
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMemory;
-	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-				 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-				 stagingBuffer, stagingBufferMemory);
-
-	void* data;
-	vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-	memcpy(data, indices.data(), (size_t)bufferSize);
-
-	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-				 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
-
-	copyBuffer(stagingBuffer, indexBuffer, bufferSize);
-
 	vkDestroyBuffer(device, stagingBuffer, nullptr);
 	vkFreeMemory(device, stagingBufferMemory, nullptr);
 }
@@ -1108,7 +1108,7 @@ void Demo::createCommandBuffers()
 		VkBuffer vertexBuffers[] = { vertexBuffer };
 		VkDeviceSize offsets[] = { 0 };
 		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
-		vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+		//vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 		//绑定描述符
 		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
 								0, //第一个描述符集合的索引 
@@ -1116,7 +1116,7 @@ void Demo::createCommandBuffers()
 								&descriptorSets[i], //描述符数组
 								0, nullptr);
 		//绘制
-		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+		vkCmdDraw(commandBuffers[i], mesh->getVertexCount(), 1, 0, 0);
 		//结束renderpass
 		vkCmdEndRenderPass(commandBuffers[i]);
 		//结束一个command buffer
