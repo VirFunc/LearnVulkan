@@ -24,13 +24,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Demo.h" />
-    <ClInclude Include="Mesh.h" />
+    <ClInclude Include="Model.h" />
     <ClInclude Include="stb_image.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Demo.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="Model.cpp" />
     <ClCompile Include="stb_image.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

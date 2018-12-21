@@ -15,6 +15,7 @@
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp> //矩阵变换
 #include"stb_image.h"
+#include"Model.h"
 
 #include<iostream>
 #include<fstream>
@@ -30,7 +31,6 @@
 #include<array>
 #include<chrono>
 
-#include"Mesh.h"
 
 struct QueueFamilyIndices
 {
@@ -55,6 +55,7 @@ struct UniformBufferObj
 	glm::mat4 model;
 	glm::mat4 view;
 	glm::mat4 proj;
+	glm::mat4 normalMat;
 };
 
 constexpr int WIDTH = 800;
@@ -149,7 +150,7 @@ private:
 	size_t currFrame = 0;
 	bool framebufferResized = false;
 
-	Mesh* mesh;//读取网格
+	Model* model;//读取网格
 
 	void initWindow();
 	void initVulkan();

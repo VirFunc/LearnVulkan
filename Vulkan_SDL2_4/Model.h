@@ -1,8 +1,8 @@
 #pragma once
 #include<vulkan/vulkan.h>
 #include<glm/glm.hpp>
-#include<FBX/fbxsdk.h>
-
+#define FBXSDK_NAMESPACE_USING 0
+#include<fbxsdk.h>
 #include<iostream>
 #include<string>
 #include<vector>
@@ -14,7 +14,7 @@
 struct Vertex
 {
 	glm::vec3 pos;
-	glm::vec3 color;
+	glm::vec3 normal;
 	glm::vec2 texCoord;
 
 	//返回Vertex对于的顶点绑定(VertexInputBinding)描述
@@ -39,7 +39,7 @@ struct Vertex
 		attributeDescription[1].binding = 0;
 		attributeDescription[1].location = 1;
 		attributeDescription[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-		attributeDescription[1].offset = offsetof(Vertex, color);
+		attributeDescription[1].offset = offsetof(Vertex, normal);
 
 		attributeDescription[2].binding = 0;
 		attributeDescription[2].location = 2;
@@ -59,40 +59,20 @@ public:
 	using vertexType = Vertex;
 
 private:
-	uint32_t mTriangleCount;
 	std::vector<vertexType> mVertices;
-	/*
-	static glm::vec3 defaultColor;
-	static glm::vec2 defaultTexCoord;
 
-	struct hashVec3
-	{
-		std::hash<float> hashFloat;
-
-		size_t operator()(const glm::vec3& v) const
-		{
-			return hashFloat(v.x) ^ hashFloat(v.y) ^ hashFloat(v.z);
-		}
-	};*/
+	uint32_t mTriangleCount;
 
 public:
-
 	Mesh() = default;
 	~Mesh() = default;
-	/*bool loadMesh(FbxNode* node);
-	static Mesh* Create(FbxNode* node);
-	void readVertices(FbxMesh * mesh, int ctrlPointIndex, vertexType& v);
-	void readTexCoord(FbxMesh* mesh, int polyIndex, int vertexIndex, vertexType& v);*/
 
-	/*const decltype(vertices)::value_type* getVertices() const;
-
-	size_t getVertexCount() const
-	{
-		return vertices.size();
-	}*/
+	uint32_t getTriangleCount() const;
+	uint32_t getVertexCount() const;
+	const Vertex* getBuffer() const; //返回保存的顶点数据数组
+	Vertex* getBuffer();
 };
 
-//std::ostream& operator<<(std::ostream& os, const Vertex& v);
 
 class Model
 {
@@ -104,17 +84,25 @@ private:
 	std::vector<meshType> mMeshes;
 
 public:
-	
+	Model() = default;
+	~Model() = default;
+
+	uint32_t getMeshCount() const;
+	const Mesh* getBuffer() const;
+	Mesh* getBuffer();
 };
 
 class ModelImporter
 {
 private:
-	FbxManager* mManager;
+	fbxsdk::FbxManager* mManager;
 	bool mInitialized;
 
-	void processNode(FbxNode* node, Model& model);
-	void processMesh(FbxMesh* mesh, Model& model);
+	void processNode(fbxsdk::FbxNode* node, Model& model);
+	void processMesh(fbxsdk::FbxMesh* mesh, Model& model);
+	void readPosition(fbxsdk::FbxVector4* ctrPoints, int ctrPointIndex, Vertex& v);
+	void readUV(fbxsdk::FbxMesh* mesh, fbxsdk::FbxGeometryElementUV* uv, int ctrPointIndex, int polygonIndex, int vertexIndex, Vertex& v);
+	void readNormal(fbxsdk::FbxMesh* mesh, fbxsdk::FbxGeometryElementNormal* normal, int vertexCount, Vertex& v);
 
 public:
 	ModelImporter();
