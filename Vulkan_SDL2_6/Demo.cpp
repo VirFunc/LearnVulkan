@@ -90,6 +90,8 @@ void Demo::mainLoop()
 
 void Demo::cleanup()
 {
+	vkDeviceWaitIdle(device);
+
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 	{
 		vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
@@ -242,7 +244,7 @@ void Demo::createInstance()
 	if (enableValidationLayers)
 	{
 		createInfo.ppEnabledLayerNames = validationLayers.data();
-		createInfo.enabledExtensionCount = static_cast<uint32_t>(validationLayers.size());
+		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 	} else
 	{
 		createInfo.ppEnabledLayerNames = nullptr;
@@ -486,16 +488,16 @@ void Demo::createImageViews()
 //创建render pass
 void Demo::createRenderPass()
 {
-	//多重采样颜色附件描述
+	//显示颜色附件描述
 	VkAttachmentDescription colorAttachment = {};
 	colorAttachment.format = swapChainFormat; //image view的格式
-	colorAttachment.samples = msaaSamples;
+	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR; //在subpass开始时对现有数据的操作
 	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE; //在subpass结束时是否对数据存储
 	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE; //对模板缓冲的操作
 	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; //renderpass开始时image的布局
-	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; //renderpass结束时image的布局
+	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; //renderpass结束时image的布局
 
 	VkAttachmentReference colorAttachmentRef = {};
 	colorAttachmentRef.attachment = 0; //attachment的索引
@@ -516,16 +518,16 @@ void Demo::createRenderPass()
 	depthAttachmentRef.attachment = 1;
 	depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-	//显示颜色附件描述
+	//多重采样颜色附件描述
 	VkAttachmentDescription colorAttachmentResolve = {};
 	colorAttachmentResolve.format = swapChainFormat;
-	colorAttachmentResolve.samples = VK_SAMPLE_COUNT_1_BIT;
+	colorAttachmentResolve.samples = msaaSamples;
 	colorAttachmentResolve.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	colorAttachmentResolve.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	colorAttachmentResolve.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	colorAttachmentResolve.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	colorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 	VkAttachmentReference colorAttachmentResolveRef = {};
 	colorAttachmentRef.attachment = 2;
@@ -581,7 +583,7 @@ void Demo::createDescriptorSetLayout()
 
 	VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
 	samplerLayoutBinding.binding = 1;
-	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	samplerLayoutBinding.descriptorCount = 1;
 	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 	samplerLayoutBinding.pImmutableSamplers = nullptr;
@@ -687,7 +689,7 @@ void Demo::createGraphicsPipeline()
 	//多重采样
 	VkPipelineMultisampleStateCreateInfo multisampleState = {};
 	multisampleState.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-	multisampleState.sampleShadingEnable = true;
+	multisampleState.sampleShadingEnable = false;
 	multisampleState.rasterizationSamples = msaaSamples;
 	multisampleState.minSampleShading = 1.0f;
 	multisampleState.pSampleMask = nullptr;
@@ -784,7 +786,7 @@ void Demo::createFramebuffers()
 
 	for (size_t i = 0; i < swapChainFramebuffers.size(); ++i)
 	{
-		std::array<VkImageView, 3> attachments = { colorImageView, depthImageView, swapChainImageViews[i] };
+		std::array<VkImageView, 3> attachments = { swapChainImageViews[i], depthImageView, colorImageView };
 
 		VkFramebufferCreateInfo framebufferInfo = {};
 		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -871,10 +873,10 @@ void Demo::createTextureImage()
 
 	//释放原texture数据
 	stbi_image_free(pixels);
-
+	
 	//创建image
 	createImage(texWidth, texHeight, VK_SAMPLE_COUNT_1_BIT,
-				VK_FORMAT_R8G8B8A8_SNORM, VK_IMAGE_TILING_OPTIMAL,
+				VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
 				VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
 
@@ -1008,7 +1010,7 @@ void Demo::createDescriptorPool()
 	std::array<VkDescriptorPoolSize, 2> poolSizes;
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	poolSizes[0].descriptorCount = static_cast<uint32_t>(swapChainImages.size()); //每一个image都有一个描述符
-	poolSizes[1].type = VK_DESCRIPTOR_TYPE_SAMPLER;
+	poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	poolSizes[1].descriptorCount = static_cast<uint32_t>(swapChainImages.size());
 
 	VkDescriptorPoolCreateInfo poolInfo = {};
