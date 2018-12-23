@@ -20,11 +20,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="VulkanApp.cpp" />
+    <ClCompile Include="MxVulkan.cpp" />
+    <ClCompile Include="MxVulkanDebug.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="util.hpp" />
-    <ClInclude Include="VulkanApp.h" />
+    <ClInclude Include="MxVulkan.h" />
+    <ClInclude Include="MxVulkanDebug.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

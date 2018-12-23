@@ -21,15 +21,18 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="VulkanApp.cpp">
+    <ClCompile Include="MxVulkan.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MxVulkanDebug.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="VulkanApp.h">
+    <ClInclude Include="MxVulkan.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="util.hpp">
+    <ClInclude Include="MxVulkanDebug.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
