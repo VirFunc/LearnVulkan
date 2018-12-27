@@ -21,18 +21,30 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="MxVulkan.cpp">
+    <ClCompile Include="MxVulkanDebug.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="MxVulkanDebug.cpp">
+    <ClCompile Include="MxVulkanManager.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MxVulkanSwapchain.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MxVulkanUtils.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="MxVulkan.h">
+    <ClInclude Include="MxVulkanDebug.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="MxVulkanDebug.h">
+    <ClInclude Include="MxVulkanManager.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MxVulkanSwapchain.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MxVulkanUtils.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

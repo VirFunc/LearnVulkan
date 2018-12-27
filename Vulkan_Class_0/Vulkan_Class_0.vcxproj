@@ -20,12 +20,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="MxVulkan.cpp" />
     <ClCompile Include="MxVulkanDebug.cpp" />
+    <ClCompile Include="MxVulkanManager.cpp" />
+    <ClCompile Include="MxVulkanSwapchain.cpp" />
+    <ClCompile Include="MxVulkanUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="MxVulkan.h" />
     <ClInclude Include="MxVulkanDebug.h" />
+    <ClInclude Include="MxVulkanManager.h" />
+    <ClInclude Include="MxVulkanSwapchain.h" />
+    <ClInclude Include="MxVulkanUtils.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
