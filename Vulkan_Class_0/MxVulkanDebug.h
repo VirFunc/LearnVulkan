@@ -3,8 +3,6 @@
 #define _MX_VULKAN_DEBUG_H_
 #define MX_DEBUG _DEBUG
 
-#include<vulkan/vulkan.h>
-
 #include"MxVulkanManager.h"
 
 #include<iostream>

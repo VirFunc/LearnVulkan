@@ -73,8 +73,10 @@ namespace Mixel
 		mSwapChainImageViews.resize(mSwapChainImages.size());
 		for (uint32_t i = 0; i < mSwapChainImages.size(); ++i)
 		{
-			mSwapChainImageViews[i] = MxVulkanImage::createImageView2D(mManager->getDevice(), mSwapChainImages[i],
-																	   mCurrFormat.format, VK_IMAGE_ASPECT_COLOR_BIT,
+			mSwapChainImageViews[i] = MxVulkanImage::createImageView2D(mManager->getDevice(),
+ mSwapChainImages[i],
+																	   mCurrFormat.format,
+ VK_IMAGE_ASPECT_COLOR_BIT,
 																	   0, 1, 0, 1);
 		}
 	}

@@ -1,27 +1,28 @@
 #include"MxVulkanDebug.h"
 #include"MxVulkanSwapchain.h"
+#include"MxVulkanRenderPass.h"
 #include"MxVulkanManager.h"
-
-VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
-	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-	VkDebugUtilsMessageTypeFlagsEXT messageType,
-	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-	void* pUserData);
+#include"MxVulkanDescriptor.h"
+#include"MxWindow.h"
 
 int main()
 {
-	SDL_Window* window;
 	if (SDL_Init(SDL_INIT_VIDEO) != 0)
 	{
 		throw std::runtime_error("Error : Failed to initialize SDL2!");
 	}
 
-	window = SDL_CreateWindow("Vulkan on SDL2 Demo", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-							  600, 480, SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
 
+	Mixel::MxWindow* window = new Mixel::MxWindow;
 	Mixel::MxVulkanManager* manager = new Mixel::MxVulkanManager;
 	Mixel::MxVulkanDebug* debug = new Mixel::MxVulkanDebug;
 	Mixel::MxVulkanSwapchain* swapchain = new Mixel::MxVulkanSwapchain;
+	Mixel::MxVulkanRenderPass* renderPass = new Mixel::MxVulkanRenderPass;
+	Mixel::MxVulkanDescriptorPool* descriptorPool = new Mixel::MxVulkanDescriptorPool;
+	Mixel::MxVulkanDescriptorSetLayout* descriptorSetLayout = new Mixel::MxVulkanDescriptorSetLayout;
+	
+
+	window->create("Demo", 600, 480);
 
 	auto* info = manager->getEmptyInitInfo();
 	info->instance.appInfo.appName = "Demo";
@@ -40,19 +41,43 @@ int main()
 	info->device.physical.queuePrioriy.compute = 1.0f;
 	info->device.physical.queuePrioriy.graphics = 1.0f;
 	info->device.physical.queuePrioriy.present = 1.0f;
-	info->window = window;
+	info->window = window->getWindow();
 
 	int width, height;
-	SDL_Vulkan_GetDrawableSize(window, &width, &height);
+	SDL_Vulkan_GetDrawableSize(window->getWindow(), &width, &height);
 
 	try
 	{
 		manager->initialize(*info);
 		debug->setup(manager);
-		debug->setDefaultCallback(Mixel::MxVulkanDebug::SEVERITY_ALL, Mixel::MxVulkanDebug::TYPE_ALL);
 		swapchain->setup(manager);
+		renderPass->setup(manager);
+		descriptorSetLayout->setup(manager);
+
+		debug->setDefaultCallback(Mixel::MxVulkanDebug::SEVERITY_ALL, Mixel::MxVulkanDebug::TYPE_ALL);
+
 		swapchain->createSwapchain({ {VK_FORMAT_B8G8R8A8_UNORM,VK_COLOR_SPACE_SRGB_NONLINEAR_KHR } },
 								   VK_PRESENT_MODE_MAILBOX_KHR, { uint32_t(width),uint32_t(height) });
+
+		auto colorAttachIndex = renderPass->addColorAttach(swapchain->getCurrFormat().format, VK_SAMPLE_COUNT_1_BIT,
+														   VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE,
+														   VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+		auto colorRefIndex = renderPass->addColorAttachRef(colorAttachIndex);
+		auto subpassIndex = renderPass->addSubpass();
+		renderPass->addSubpassColorRef(subpassIndex, { colorRefIndex });
+		renderPass->addDependency(VK_SUBPASS_EXTERNAL, subpassIndex,
+								  VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+								  VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+								  0,
+								  VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+								  VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+		renderPass->createRenderPass();
+
+		descriptorSetLayout->addBindings(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
+		descriptorSetLayout->addBindings(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
+		descriptorSetLayout->createDescriptorSetLayout();
+
+
 	}
 	catch (const std::exception& e)
 	{
@@ -73,6 +98,9 @@ int main()
 			}
 		}
 	}
+
+	if (renderPass)
+		delete renderPass;
 	if (swapchain)
 		delete swapchain;
 	if (debug)
@@ -80,31 +108,4 @@ int main()
 	if (manager)
 		delete manager;
 	return 0;
-}
-
-VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
-	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-	VkDebugUtilsMessageTypeFlagsEXT messageType,
-	const VkDebugUtilsMessengerCallbackDataEXT * pCallbackData,
-	void * pUserData)
-{
-	std::string msg = "[ Validation layer ] : [ ";
-	switch (messageSeverity)
-	{
-	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-		msg += "Warning";
-		break;
-	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-		msg += "Error";
-		break;
-	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-		msg += "Verbose";
-		break;
-	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-		msg += "Infomation";
-		break;
-	}
-	msg = msg + " ]\n\t" + pCallbackData->pMessage;
-	std::cerr << std::endl << msg << std::endl;
-	return VK_FALSE;
 }

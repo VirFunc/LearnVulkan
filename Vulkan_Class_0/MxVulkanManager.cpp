@@ -2,7 +2,6 @@
 
 namespace Mixel
 {
-
 	void MxVulkanManager::createInstance(const InitializeInfo & info)
 	{
 		if (info.debugMode && !checkValidationLayerSupport(info))
@@ -143,6 +142,20 @@ namespace Mixel
 		{
 			throw std::runtime_error("Error : Failed to create logical device!");
 		}
+
+		if (info.device.physical.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+			vkGetDeviceQueue(mDevice.logicalDevice, mQueueFamilyIndices.graphics, 0, &mQueue.graphics);
+		if (info.device.physical.queueFlags & VK_QUEUE_COMPUTE_BIT)
+			vkGetDeviceQueue(mDevice.logicalDevice, mQueueFamilyIndices.compute, 0, &mQueue.compute);
+		if (info.present)
+			vkGetDeviceQueue(mDevice.logicalDevice, mQueueFamilyIndices.present, 0, &(mQueue.present));
+
+	}
+
+	void MxVulkanManager::getDeviceInfo()
+	{
+		//physical device memory properties
+		vkGetPhysicalDeviceMemoryProperties(mDevice.physicalDevice, &mDevice.memoryProperties);
 	}
 
 	bool MxVulkanManager::checkValidationLayerSupport(const InitializeInfo & info)
@@ -305,6 +318,8 @@ namespace Mixel
 		createSurface(info);
 		pickPhysicalDevice(info);
 		createLogicalDevice(info);
+
+		getDeviceInfo();
 		mIsReady = true;
 	}
 
@@ -342,6 +357,15 @@ namespace Mixel
 			return nullptr;
 		}
 		return temp;
+	}
+
+	const uint32_t MxVulkanManager::getMemoryTypeIndex(const uint32_t type, const VkMemoryPropertyFlags properties) const
+	{
+		for (uint32_t i = 0; i < mDevice.memoryProperties.memoryTypeCount; ++i)
+		{
+			if (type  & (1 << i) && mDevice.memoryProperties.memoryTypes[i].propertyFlags & properties)
+				return i;
+		}
 	}
 
 	//MxVulkanDebug * MxVulkanManager::createVulkanDebug() const

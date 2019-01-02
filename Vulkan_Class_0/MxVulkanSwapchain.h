@@ -2,8 +2,6 @@
 #ifndef _MX_VULKAN_SWAPCHAIN_H_
 #define _MX_VULKAN_SWAPCHAIN_H_
 
-#include<vulkan/vulkan.h>
-
 #include"MxVulkanUtils.h"
 #include"MxVulkanManager.h"
 

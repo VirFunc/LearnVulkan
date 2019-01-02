@@ -20,16 +20,31 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MxVulkanCommand.cpp" />
     <ClCompile Include="MxVulkanDebug.cpp" />
+    <ClCompile Include="MxVulkanDescriptor.cpp" />
+    <ClCompile Include="MxVulkanFramebuffer.cpp" />
+    <ClCompile Include="MxVulkanImage.cpp" />
     <ClCompile Include="MxVulkanManager.cpp" />
+    <ClCompile Include="MxVulkanPipeline.cpp" />
+    <ClCompile Include="MxVulkanRenderPass.cpp" />
     <ClCompile Include="MxVulkanSwapchain.cpp" />
     <ClCompile Include="MxVulkanUtils.cpp" />
+    <ClCompile Include="MxWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="MxVulkanCommand.h" />
     <ClInclude Include="MxVulkanDebug.h" />
+    <ClInclude Include="MxVulkanDescriptor.h" />
+    <ClInclude Include="MxVulkanFramebuffer.h" />
+    <ClInclude Include="MxVulkanImage.h" />
     <ClInclude Include="MxVulkanManager.h" />
+    <ClInclude Include="MxVulkanPipeline.h" />
+    <ClInclude Include="MxVulkanRenderPass.h" />
+    <ClInclude Include="MxVulkanShader.hpp" />
     <ClInclude Include="MxVulkanSwapchain.h" />
     <ClInclude Include="MxVulkanUtils.h" />
+    <ClInclude Include="MxWindow.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

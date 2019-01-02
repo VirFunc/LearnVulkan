@@ -1099,7 +1099,7 @@ void Demo::createCommandBuffers()
 	//	|=>Render Pass End
 
 	commandBuffers.resize(swapChainFramebuffers.size());
-
+	
 	//为每一个swap chain framebuffer 申请命令缓冲
 	VkCommandBufferAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;

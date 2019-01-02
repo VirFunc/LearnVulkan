@@ -46,7 +46,7 @@ namespace Mixel
 				{
 					VkPhysicalDeviceType type;
 					std::vector<const char*> extensions;
-					VkQueueFlags queueFlags;
+					VkQueueFlagBits queueFlags;
 					struct
 					{
 						float graphics;
@@ -68,6 +68,7 @@ namespace Mixel
 			VkPhysicalDevice physicalDevice;
 			VkPhysicalDeviceProperties properties;
 			VkPhysicalDeviceFeatures features;
+			VkPhysicalDeviceMemoryProperties memoryProperties;
 			std::vector<VkExtensionProperties> extensionSupported;
 		}mDevice;
 
@@ -78,11 +79,13 @@ namespace Mixel
 		}mInstance;
 
 		MxVulkanQueueFamilyIndices mQueueFamilyIndices;
+		MxVulkanQueue mQueue;
 
 		void createInstance(const InitializeInfo & info);
 		void createSurface(const InitializeInfo & info); //todo depart this
 		void pickPhysicalDevice(const InitializeInfo & info);
 		void createLogicalDevice(const InitializeInfo & info);
+		void getDeviceInfo();
 
 		bool checkValidationLayerSupport(const InitializeInfo & info);
 		bool isDeviceSuitable(const InitializeInfo & info, const VkPhysicalDevice& device);
@@ -102,8 +105,9 @@ namespace Mixel
 		const VkPhysicalDevice& getPhysicalDevice() const { return mDevice.physicalDevice; };
 		const VkSurfaceKHR& getSurface() const { return mSurface; };
 		const MxVulkanQueueFamilyIndices& getQueueFamilyIndices() const { return mQueueFamilyIndices; };
+		const MxVulkanQueue& getQueue() const { return mQueue; };
 
-		/*MxVulkanDebug* createVulkanDebug() const;*/
+		const uint32_t getMemoryTypeIndex(const uint32_t type, const VkMemoryPropertyFlags properties) const;
 
 		~MxVulkanManager() { destroy(); };
 	};

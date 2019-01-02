@@ -33,6 +33,27 @@
     <ClCompile Include="MxVulkanUtils.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="MxVulkanRenderPass.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MxVulkanCommand.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MxVulkanDescriptor.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MxWindow.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MxVulkanPipeline.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MxVulkanFramebuffer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MxVulkanImage.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MxVulkanDebug.h">
@@ -45,6 +66,30 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="MxVulkanUtils.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MxVulkanRenderPass.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MxVulkanCommand.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MxVulkanDescriptor.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MxWindow.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MxVulkanPipeline.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MxVulkanShader.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MxVulkanFramebuffer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MxVulkanImage.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
