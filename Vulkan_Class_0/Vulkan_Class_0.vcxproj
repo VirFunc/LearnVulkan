@@ -33,6 +33,8 @@
     <ClCompile Include="MxWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="MxVulkan.h" />
+    <ClInclude Include="MxVulkanBuffer.hpp" />
     <ClInclude Include="MxVulkanCommand.h" />
     <ClInclude Include="MxVulkanDebug.h" />
     <ClInclude Include="MxVulkanDescriptor.h" />
@@ -45,6 +47,10 @@
     <ClInclude Include="MxVulkanSwapchain.h" />
     <ClInclude Include="MxVulkanUtils.h" />
     <ClInclude Include="MxWindow.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shader\shader.frag" />
+    <None Include="Shader\shader.vert" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

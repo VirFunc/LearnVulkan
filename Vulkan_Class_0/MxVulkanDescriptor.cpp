@@ -41,9 +41,7 @@ namespace Mixel
 		createInfo.poolSizeCount = poolSizes.size();
 		createInfo.maxSets = maxSets;
 
-		if (vkCreateDescriptorPool(mManager->getDevice(), &createInfo, nullptr, &mDescriptorPool) != VK_SUCCESS)
-			throw std::runtime_error("Error : Failed to create descriptor pool");
-
+		MX_VK_CHECK_RESULT(vkCreateDescriptorPool(mManager->getDevice(), &createInfo, nullptr, &mDescriptorPool));
 		mPoolSizes.clear();
 		return true;
 	}
@@ -57,9 +55,7 @@ namespace Mixel
 		allocInfo.descriptorSetCount = layouts.size();
 
 		std::vector<VkDescriptorSet> tempSets(layouts.size());
-		if (vkAllocateDescriptorSets(mManager->getDevice(), &allocInfo, tempSets.data()) != VK_SUCCESS)
-			throw std::runtime_error("Error : Failed to allocate descriptor set");
-
+		MX_VK_CHECK_RESULT(vkAllocateDescriptorSets(mManager->getDevice(), &allocInfo, tempSets.data()));
 		return tempSets;
 	}
 
@@ -72,9 +68,7 @@ namespace Mixel
 		allocInfo.descriptorSetCount = 1;
 
 		VkDescriptorSet tempSet;
-		if (vkAllocateDescriptorSets(mManager->getDevice(), &allocInfo, &tempSet) != VK_SUCCESS)
-			throw std::runtime_error("Error : Failed to allocate descriptor set");
-
+		MX_VK_CHECK_RESULT(vkAllocateDescriptorSets(mManager->getDevice(), &allocInfo, &tempSet));
 		return tempSet;
 	}
 
@@ -149,10 +143,7 @@ namespace Mixel
 		layoutInfo.bindingCount = mBindings.size();
 
 		VkDescriptorSetLayout layout;
-		if (vkCreateDescriptorSetLayout(mManager->getDevice(), &layoutInfo, nullptr, &layout) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Error : Failed to create descriptor set layout!");
-		}
+		MX_VK_CHECK_RESULT(vkCreateDescriptorSetLayout(mManager->getDevice(), &layoutInfo, nullptr, &layout));
 		mLayout = layout;
 		return true;
 	}

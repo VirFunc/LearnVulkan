@@ -73,10 +73,10 @@ namespace Mixel
 		mSwapChainImageViews.resize(mSwapChainImages.size());
 		for (uint32_t i = 0; i < mSwapChainImages.size(); ++i)
 		{
-			mSwapChainImageViews[i] = MxVulkanImage::createImageView2D(mManager->getDevice(),
- mSwapChainImages[i],
+			mSwapChainImageViews[i] = MxVulkanImage::createImageView2D(mManager,
+																	   mSwapChainImages[i],
 																	   mCurrFormat.format,
- VK_IMAGE_ASPECT_COLOR_BIT,
+																	   VK_IMAGE_ASPECT_COLOR_BIT,
 																	   0, 1, 0, 1);
 		}
 	}
@@ -189,11 +189,7 @@ namespace Mixel
 		createInfo.oldSwapchain = VK_NULL_HANDLE;
 
 		//创建交换链
-		if (vkCreateSwapchainKHR(mManager->getDevice(), &createInfo, nullptr, &mSwapchain) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Error : Failed to create swap chain!");
-		}
-
+		MX_VK_CHECK_RESULT(vkCreateSwapchainKHR(mManager->getDevice(), &createInfo, nullptr, &mSwapchain));
 		//获取交换链中的image
 		vkGetSwapchainImagesKHR(mManager->getDevice(), mSwapchain, &imageCount, nullptr);
 		mSwapChainImages.resize(imageCount);

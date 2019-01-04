@@ -103,11 +103,19 @@ namespace Mixel
 				return false;
 		}
 		auto& subpass = (*mSubpasses)[subpassIndex];
-		subpass.colorRef.reserve(refIndices.size());
+		subpass.colorRef.reserve(subpass.colorRef.size() + refIndices.size());
 		for (const auto& index : refIndices)
 		{
 			subpass.colorRef.push_back((*mAttachRefs)[index]);
 		}
+		return true;
+	}
+
+	bool MxVulkanRenderPass::addSubpassColorRef(size_t subpassIndex, const size_t refIndex)
+	{
+		if (!(refIndex < mAttachRefs->size()))
+			return false;
+		(*mSubpasses)[subpassIndex].colorRef.push_back((*mAttachRefs)[refIndex]);
 		return true;
 	}
 
@@ -197,11 +205,7 @@ namespace Mixel
 		createInfo.pDependencies = mDependencies->data();
 		createInfo.dependencyCount = mDependencies->size();
 
-		if (vkCreateRenderPass(mManager->getDevice(), &createInfo, nullptr, &mRenderPass) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Error : Failed to create render pass!");
-		}
-
+		MX_VK_CHECK_RESULT(vkCreateRenderPass(mManager->getDevice(), &createInfo, nullptr, &mRenderPass));
 		clear();
 		return true;
 	}

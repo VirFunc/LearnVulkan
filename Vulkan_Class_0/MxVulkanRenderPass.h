@@ -49,6 +49,7 @@ namespace Mixel
 		size_t addDepthStencilAttachRef(size_t index, VkImageLayout layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 		size_t addSubpass(VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS);
 		bool addSubpassColorRef(size_t subpassIndex, const std::vector<size_t>& refIndices);
+		bool addSubpassColorRef(size_t subpassIndex, const size_t refIndex);
 		bool addSubpassDepthStencilRef(size_t subpassIndex, size_t refIndex);
 		bool addSubpassResolveRef(size_t subpassIndex, size_t refIndex);
 		size_t addDependency(size_t srcSubpass, size_t dstSubpass,

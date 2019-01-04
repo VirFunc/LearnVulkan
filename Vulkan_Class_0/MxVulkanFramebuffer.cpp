@@ -40,8 +40,7 @@ namespace Mixel
 		createInfo.height = mExtent.height;
 		createInfo.layers = mLayers;
 
-		if (vkCreateFramebuffer(mManager->getDevice(), &createInfo, nullptr, &mFramebuffer) != VK_SUCCESS)
-			throw std::runtime_error("Error : Failed to create framebuffer");
+		MX_VK_CHECK_RESULT(vkCreateFramebuffer(mManager->getDevice(), &createInfo, nullptr, &mFramebuffer));
 		return true;
 	}
 

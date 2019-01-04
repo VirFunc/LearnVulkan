@@ -9,6 +9,7 @@
 #include<SDL2/SDL_vulkan.h>
 
 #include"MxVulkanUtils.h"
+#include"MxVulkanBuffer.hpp"
 
 #include<iostream>
 #include<vector>
@@ -46,7 +47,7 @@ namespace Mixel
 				{
 					VkPhysicalDeviceType type;
 					std::vector<const char*> extensions;
-					VkQueueFlagBits queueFlags;
+					VkQueueFlags queueFlags;
 					struct
 					{
 						float graphics;
@@ -109,6 +110,9 @@ namespace Mixel
 
 		const uint32_t getMemoryTypeIndex(const uint32_t type, const VkMemoryPropertyFlags properties) const;
 
+		MxVulkanBuffer * createBuffer(const VkBufferUsageFlags usage, const VkMemoryPropertyFlags memoryProperty,
+									  const VkDeviceSize size, const VkSharingMode sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+									  void * data = nullptr);
 		~MxVulkanManager() { destroy(); };
 	};
 }

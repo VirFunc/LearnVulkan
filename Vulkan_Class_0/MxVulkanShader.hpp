@@ -31,11 +31,12 @@ namespace Mixel
 		std::list<MxVulkanShaderModule> mModules;
 
 	public:
+		using ShaderModuleIterator = std::list<MxVulkanShaderModule>::const_iterator;
 		MxVulkanShaderHelper() :mIsReady(false), mManager(nullptr) {};
 		bool setup(const MxVulkanManager* manager);
-		const MxVulkanShaderModule* createModule(const std::vector<char>& code,const VkShaderStageFlagBits stage);
-		const MxVulkanShaderModule* createModule(const std::string& path, const VkShaderStageFlagBits stage);
-		bool destroyModule(MxVulkanShaderModule* module);
+		ShaderModuleIterator createModule(const std::vector<char>& code,const VkShaderStageFlagBits stage);
+		ShaderModuleIterator createModule(const std::string& path, const VkShaderStageFlagBits stage);
+		bool destroyModule(ShaderModuleIterator it);
 		void destroy();
 		~MxVulkanShaderHelper() { destroy(); };
 	};
@@ -47,9 +48,10 @@ namespace Mixel
 
 		mManager = manager;
 		mIsReady = true;
+		return true;
 	}
 
-	const MxVulkanShaderModule * MxVulkanShaderHelper::createModule(const std::vector<char>& code,const VkShaderStageFlagBits stage)
+	MxVulkanShaderHelper::ShaderModuleIterator MxVulkanShaderHelper::createModule(const std::vector<char>& code,const VkShaderStageFlagBits stage)
 	{
 		VkShaderModule temp;
 		VkShaderModuleCreateInfo createInfo = {};
@@ -57,14 +59,12 @@ namespace Mixel
 		createInfo.codeSize = code.size();
 		createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
-		if (vkCreateShaderModule(mManager->getDevice(), &createInfo, nullptr, &temp) != VK_SUCCESS)
-			return nullptr;
-
+		MX_VK_CHECK_RESULT(vkCreateShaderModule(mManager->getDevice(), &createInfo, nullptr, &temp));
 		mModules.push_back({ temp,stage });
-		return &mModules.back();
+		return --mModules.end();
 	}
 
-	const MxVulkanShaderModule * MxVulkanShaderHelper::createModule(const std::string & path, const VkShaderStageFlagBits stage)
+	MxVulkanShaderHelper::ShaderModuleIterator MxVulkanShaderHelper::createModule(const std::string & path, const VkShaderStageFlagBits stage)
 	{
 		std::ifstream inFile(path, std::ios_base::ate | std::ios_base::binary);
 		if (!inFile.is_open())
@@ -77,10 +77,10 @@ namespace Mixel
 		return createModule(buffer, stage);
 	}
 
-	bool MxVulkanShaderHelper::destroyModule(MxVulkanShaderModule * module)
+	bool MxVulkanShaderHelper::destroyModule(ShaderModuleIterator it)
 	{
-		auto it = std::find(mModules.begin(), mModules.end(), *module);
-		if (it == mModules.end())
+		auto find = std::find(mModules.begin(), mModules.end(), *it);
+		if (find == mModules.end())
 			return false;
 		vkDestroyShaderModule(mManager->getDevice(), it->module, nullptr);
 		mModules.erase(it);

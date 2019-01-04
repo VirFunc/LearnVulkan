@@ -45,10 +45,7 @@ namespace Mixel
 		}
 
 		createInfo.flags = 0;
-		if (vkCreateCommandPool(mManager->getDevice(), &createInfo, nullptr, &mCommandPool) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Error : Failed to create command pool!");
-		}
+		MX_VK_CHECK_RESULT(vkCreateCommandPool(mManager->getDevice(), &createInfo, nullptr, &mCommandPool));
 		return true;
 	}
 
@@ -61,8 +58,7 @@ namespace Mixel
 		allocateInfo.commandBufferCount = count;
 
 		std::vector<VkCommandBuffer> buffer(count);
-		if (vkAllocateCommandBuffers(mManager->getDevice(), &allocateInfo, buffer.data()) != VK_SUCCESS)
-			throw std::runtime_error("Error : Failed to allocate command buffer");
+		MX_VK_CHECK_RESULT(vkAllocateCommandBuffers(mManager->getDevice(), &allocateInfo, buffer.data()));
 		auto it = mCommandBuffers.cend();
 		mCommandBuffers.insert(mCommandBuffers.end(), buffer.cbegin(), buffer.cend());
 		return it;
@@ -74,15 +70,13 @@ namespace Mixel
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		beginInfo.flags = usage;
 
-		if (vkBeginCommandBuffer(*it, &beginInfo) != VK_SUCCESS)
-			throw std::runtime_error("Error : Failed to begin command buffer");
+		MX_VK_CHECK_RESULT(vkBeginCommandBuffer(*it, &beginInfo));
 		return true;
 	}
 
 	bool MxVulkanCommand::endCommandBuffer(CommandBufferIterator it)
 	{
-		if (vkEndCommandBuffer(*it) != VK_SUCCESS)
-			throw std::runtime_error("Error : Failed to end command buffer");
+		MX_VK_CHECK_RESULT(vkEndCommandBuffer(*it));
 		return true;
 	}
 
@@ -103,18 +97,16 @@ namespace Mixel
 	{
 		sTempBufferAllocInfo.commandPool = mCommandPool;
 		VkCommandBuffer temp;
-		if (vkAllocateCommandBuffers(mManager->getDevice(), &sTempBufferAllocInfo, &temp) != VK_SUCCESS)
-			throw std::runtime_error("Error : Failed to allocate temporary command buffer");
 
-		if (vkBeginCommandBuffer(temp, &sTempBufferBeginInfo) != VK_SUCCESS)
-			throw std::runtime_error("Error : Failed to begin temporary command buffer");
+		MX_VK_CHECK_RESULT(vkAllocateCommandBuffers(mManager->getDevice(), &sTempBufferAllocInfo, &temp));
+
+		MX_VK_CHECK_RESULT(vkBeginCommandBuffer(temp, &sTempBufferBeginInfo));
 		return temp;
 	}
 
 	void MxVulkanCommand::endTempCommandBuffer(VkCommandBuffer commandBuffer)
 	{
-		if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
-			throw std::runtime_error("Error : Failed to end temporaty command buffer");
+		MX_VK_CHECK_RESULT(vkEndCommandBuffer(commandBuffer));
 		VkSubmitInfo submitInfo = {};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 		submitInfo.pCommandBuffers = &commandBuffer;

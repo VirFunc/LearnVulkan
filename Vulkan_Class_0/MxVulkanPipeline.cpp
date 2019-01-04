@@ -78,9 +78,19 @@ namespace Mixel
 		mPipelineStates->viewports.insert(mPipelineStates->viewports.end(), viewports.begin(), viewports.end());
 	}
 
+	void MxVulkanPipeline::addViewport(const VkViewport& viewport)
+	{
+		mPipelineStates->viewports.push_back(viewport);
+	}
+
 	void MxVulkanPipeline::addScissor(const std::vector<VkRect2D>& scissors)
 	{
 		mPipelineStates->scissors.insert(mPipelineStates->scissors.end(), scissors.begin(), scissors.end());
+	}
+
+	void MxVulkanPipeline::addScissor(const VkRect2D & scissors)
+	{
+		mPipelineStates->scissors.push_back(scissors);
 	}
 
 	void MxVulkanPipeline::setRasterization(const VkPolygonMode polygonMode, const VkCullModeFlags cullMode, const VkFrontFace frontFace, const float lineWidth, const bool depthClampEnable, const bool rasterizerDiscardEnable)
@@ -134,6 +144,31 @@ namespace Mixel
 		mPipelineStates->depthStencil.back = back;
 	}
 
+	void MxVulkanPipeline::addDefaultBlendAttachments()
+	{
+		VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
+		colorBlendAttachment.blendEnable = true; //enable blend
+		colorBlendAttachment.colorWriteMask =
+			VK_COLOR_COMPONENT_R_BIT |
+			VK_COLOR_COMPONENT_G_BIT |
+			VK_COLOR_COMPONENT_B_BIT |
+			VK_COLOR_COMPONENT_A_BIT;
+		//finalColor.rgb = (srcColorBlendFactor * newColor.rgb) <colorBlendOp> (dstColorBlendFactor * oldColor.rgb);
+		colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+		colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+		colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+		//finalColor.a   = (srcAlphaBlendFactor * newColor.a)   <alphaBlendOp> (dstAlphaBlendFactor * oldColor.a);
+		colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+		colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+		colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+		addBlendAttachments(std::move(colorBlendAttachment));
+	}
+
+	void MxVulkanPipeline::addBlendAttachments(const VkPipelineColorBlendAttachmentState & attachment)
+	{
+		mPipelineStates->colorBlendAttachments.push_back(attachment);
+	}
+
 	void MxVulkanPipeline::addBlendAttachments(const std::vector<VkPipelineColorBlendAttachmentState>& attachments)
 	{
 		mPipelineStates->colorBlendAttachments.insert(mPipelineStates->colorBlendAttachments.end(), attachments.begin(), attachments.end());
@@ -151,9 +186,19 @@ namespace Mixel
 		mPipelineStates->colorBlend.blendConstants[3] = constantA;
 	}
 
+	void MxVulkanPipeline::addDynamicState(const VkDynamicState dynamicState)
+	{
+		mPipelineStates->dynamicStates.push_back(dynamicState);
+	}
+
 	void MxVulkanPipeline::addDynamicState(const std::vector<VkDynamicState>& dynamicStates)
 	{
 		mPipelineStates->dynamicStates.insert(mPipelineStates->dynamicStates.end(), dynamicStates.begin(), dynamicStates.end());
+	}
+
+	void MxVulkanPipeline::addDescriptorSetLayout(const VkDescriptorSetLayout setLayout)
+	{
+		mPipelineStates->descriptorSetLayouts.push_back(setLayout);
 	}
 
 	void MxVulkanPipeline::addDescriptorSetLayout(const std::vector<VkDescriptorSetLayout>& setLayouts)
@@ -161,7 +206,12 @@ namespace Mixel
 		mPipelineStates->descriptorSetLayouts.insert(mPipelineStates->descriptorSetLayouts.end(), setLayouts.begin(), setLayouts.end());
 	}
 
-	void MxVulkanPipeline::addPushConstantRanges(const std::vector<VkPushConstantRange> ranges)
+	void MxVulkanPipeline::addPushConstantRanges(const VkPushConstantRange & range)
+	{
+		mPipelineStates->pushConstantRanges.push_back(range);
+	}
+
+	void MxVulkanPipeline::addPushConstantRanges(const std::vector<VkPushConstantRange>& ranges)
 	{
 		mPipelineStates->pushConstantRanges.insert(mPipelineStates->pushConstantRanges.end(), ranges.begin(), ranges.end());
 	}
@@ -211,9 +261,10 @@ namespace Mixel
 		pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;	//基础管线（vulkan允许在已经存在的管线上派生新的管线）
 		pipelineCreateInfo.basePipelineIndex = -1;
 
-		if (vkCreateGraphicsPipelines(mManager->getDevice(), VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &mPipeline) != VK_SUCCESS)
-			throw std::runtime_error("Error : Failed to create graphics pipeline");
-
+		MX_VK_CHECK_RESULT(vkCreateGraphicsPipelines(mManager->getDevice(),
+						   VK_NULL_HANDLE, 1,
+						   &pipelineCreateInfo, nullptr,
+						   &mPipeline));
 		clear();
 		return true;
 	}

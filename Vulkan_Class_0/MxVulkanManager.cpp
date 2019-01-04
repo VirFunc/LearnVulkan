@@ -53,10 +53,7 @@ namespace Mixel
 		mInstance.extensionSupported = getInstanceExtensions();
 
 		//创建实例
-		if (vkCreateInstance(&createInfo, nullptr, &mInstance.instance) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Error : Failed to create Vulkan instance");
-		}
+		MX_VK_CHECK_RESULT(vkCreateInstance(&createInfo, nullptr, &mInstance.instance));
 	}
 
 	void MxVulkanManager::createSurface(const InitializeInfo & info)
@@ -138,10 +135,7 @@ namespace Mixel
 		}
 
 		//创建设备
-		if (vkCreateDevice(mDevice.physicalDevice, &deviceCreateInfo, nullptr, &mDevice.logicalDevice) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Error : Failed to create logical device!");
-		}
+		MX_VK_CHECK_RESULT(vkCreateDevice(mDevice.physicalDevice, &deviceCreateInfo, nullptr, &mDevice.logicalDevice));
 
 		if (info.device.physical.queueFlags & VK_QUEUE_GRAPHICS_BIT)
 			vkGetDeviceQueue(mDevice.logicalDevice, mQueueFamilyIndices.graphics, 0, &mQueue.graphics);
@@ -366,6 +360,49 @@ namespace Mixel
 			if (type  & (1 << i) && mDevice.memoryProperties.memoryTypes[i].propertyFlags & properties)
 				return i;
 		}
+	}
+
+	MxVulkanBuffer * MxVulkanManager::createBuffer(const VkBufferUsageFlags usage, const VkMemoryPropertyFlags memoryProperty,
+												   const VkDeviceSize size, const VkSharingMode sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+												   void * data = nullptr)
+	{
+		MxVulkanBuffer* buffer = new MxVulkanBuffer;
+		VkBufferCreateInfo createInfo = {};
+		createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		createInfo.size = size;
+		createInfo.usage = usage;
+		createInfo.sharingMode = sharingMode;
+
+		MX_VK_CHECK_RESULT(vkCreateBuffer(mDevice.logicalDevice, &createInfo, nullptr, &buffer->buffer));
+
+		VkMemoryRequirements memRequirements = {};
+		vkGetBufferMemoryRequirements(mDevice.logicalDevice, buffer->buffer, &memRequirements);
+
+		VkMemoryAllocateInfo allocInfo = {};
+		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+		allocInfo.allocationSize = memRequirements.size;
+		allocInfo.memoryTypeIndex = getMemoryTypeIndex(memRequirements.memoryTypeBits, memoryProperty);
+		MX_VK_CHECK_RESULT(vkAllocateMemory(mDevice.logicalDevice, &allocInfo, nullptr, &buffer->memory));
+
+		buffer->alignment = memRequirements.alignment;
+		buffer->size = memRequirements.size;
+		buffer->usages = usage;
+		buffer->memoryProperty = memoryProperty;
+
+		if (!data)
+		{
+			MX_VK_CHECK_RESULT(buffer->map());
+			buffer->copyTo(data, size);
+
+			//if not HOST_COHERENT then need to be flushed
+			if ((memoryProperty & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0)
+				buffer->flush();
+			buffer->unmap();
+		}
+
+		buffer->setupDescriptor();
+		MX_VK_CHECK_RESULT(buffer->bind());
+		return buffer;
 	}
 
 	//MxVulkanDebug * MxVulkanManager::createVulkanDebug() const

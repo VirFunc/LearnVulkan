@@ -2,7 +2,7 @@
 #ifndef _MX_VULKAN_SWAPCHAIN_H_
 #define _MX_VULKAN_SWAPCHAIN_H_
 
-#include"MxVulkanUtils.h"
+#include"MxVulkanImage.h"
 #include"MxVulkanManager.h"
 
 #include<vector>
@@ -45,8 +45,11 @@ namespace Mixel
 		bool createSwapchain(const std::vector<VkSurfaceFormatKHR>& rqFormats,
 							 VkPresentModeKHR rqPresentMode,
 							 VkExtent2D rqExtent);
-		VkSurfaceFormatKHR getCurrFormat() const { return mCurrFormat; } ;
+		const VkSurfaceFormatKHR& getCurrFormat() const { return mCurrFormat; };
 		VkPresentModeKHR getCurrPresentMode() const { return mCurrPresentMode; };
+		const VkExtent2D& getCurrExtent() const { return mCurrExtent; };
+		uint32_t getImageCount() const { return mSwapChainImages.size(); };
+		const std::vector<VkImageView> getImageViews() const { return mSwapChainImageViews; };
 		void destroy();
 		~MxVulkanSwapchain();
 	};

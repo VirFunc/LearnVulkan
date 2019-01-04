@@ -92,5 +92,19 @@
     <ClInclude Include="MxVulkanImage.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="MxVulkan.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MxVulkanBuffer.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shader\shader.frag">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="Shader\shader.vert">
+      <Filter>Shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -51,8 +51,9 @@ namespace Mixel
 		void setInputAssembly(const VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, const bool primitiveRestart = false);
 
 		void addViewport(const std::vector<VkViewport>& viewports);
-
+		void addViewport(const VkViewport& viewport);
 		void addScissor(const std::vector<VkRect2D>& scissors);
+		void addScissor(const VkRect2D& scissors);
 
 		void setRasterization(const VkPolygonMode polygonMode, const VkCullModeFlags cullMode, const VkFrontFace frontFace,
 							  const float lineWidth = 1.0f,
@@ -77,17 +78,22 @@ namespace Mixel
 		void setStencilTest(const bool enable,
 							const VkStencilOpState& front = {}, const VkStencilOpState& back = {});
 
+		void addDefaultBlendAttachments();
+		void addBlendAttachments(const VkPipelineColorBlendAttachmentState& attachment);
 		void addBlendAttachments(const std::vector<VkPipelineColorBlendAttachmentState>& attachments);
 
 		void setBlend(const bool logicalOpEnable = false, const VkLogicOp logicOp = VK_LOGIC_OP_COPY,
 					  const float constantR = 0.0, const float constantG = 0.0,
 					  const float constantB = 0.0, const float constantA = 0.0);
 
+		void addDynamicState(const VkDynamicState dynamicState);
 		void addDynamicState(const std::vector<VkDynamicState>& dynamicStates);
 
+		void addDescriptorSetLayout(const VkDescriptorSetLayout setLayout);
 		void addDescriptorSetLayout(const std::vector<VkDescriptorSetLayout>& setLayouts);
 
-		void addPushConstantRanges(const std::vector<VkPushConstantRange> ranges = std::vector<VkPushConstantRange>());
+		void addPushConstantRanges(const VkPushConstantRange& range);
+		void addPushConstantRanges(const std::vector<VkPushConstantRange>& ranges = std::vector<VkPushConstantRange>());
 
 		bool createPipeline();
 
