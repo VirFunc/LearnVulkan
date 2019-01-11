@@ -1,12 +1,12 @@
-#include "MxVulkanSwapchain.h"
+#include "MxVkSwapchain.h"
 
 namespace Mixel
 {
-	MxVulkanSwapchain::MxVulkanSwapchain() :mIsReady(false), mManager(nullptr)
+	MxVkSwapchain::MxVkSwapchain() :mIsReady(false), mManager(nullptr)
 	{
 	}
 
-	MxVulkanSwapchain::SwapchainSupportDetails MxVulkanSwapchain::getSwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface)
+	MxVkSwapchain::SwapchainSupportDetails MxVkSwapchain::getSwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface)
 	{
 		{//获取交换链细节信息
 			SwapchainSupportDetails details;
@@ -32,7 +32,7 @@ namespace Mixel
 		}
 	}
 
-	bool MxVulkanSwapchain::chooseFormat(const std::vector<VkSurfaceFormatKHR>& rqFormats, VkSurfaceFormatKHR& format)
+	bool MxVkSwapchain::chooseFormat(const std::vector<VkSurfaceFormatKHR>& rqFormats, VkSurfaceFormatKHR& format)
 	{
 		if (mSwapchainSupportDetails.formats.size() == 1 && mSwapchainSupportDetails.formats[0].format == VK_FORMAT_UNDEFINED)
 		{
@@ -54,7 +54,7 @@ namespace Mixel
 		return false;
 	}
 
-	bool MxVulkanSwapchain::choosePresentMode(const VkPresentModeKHR rqPresentMode, VkPresentModeKHR & presentMode)
+	bool MxVkSwapchain::choosePresentMode(const VkPresentModeKHR rqPresentMode, VkPresentModeKHR & presentMode)
 	{
 		for (const auto& support : mSwapchainSupportDetails.presentModes)
 		{
@@ -68,12 +68,12 @@ namespace Mixel
 		return false;
 	}
 
-	void MxVulkanSwapchain::createSwapchainImageView()
+	void MxVkSwapchain::createSwapchainImageView()
 	{
 		mSwapChainImageViews.resize(mSwapChainImages.size());
 		for (uint32_t i = 0; i < mSwapChainImages.size(); ++i)
 		{
-			mSwapChainImageViews[i] = MxVulkanImage::createImageView2D(mManager,
+			mSwapChainImageViews[i] = MxVkImage::createImageView2D(mManager,
 																	   mSwapChainImages[i],
 																	   mCurrFormat.format,
 																	   VK_IMAGE_ASPECT_COLOR_BIT,
@@ -81,7 +81,7 @@ namespace Mixel
 		}
 	}
 
-	VkExtent2D MxVulkanSwapchain::chooseExtent(const VkExtent2D & rqExtent)
+	VkExtent2D MxVkSwapchain::chooseExtent(const VkExtent2D & rqExtent)
 	{
 		if (mSwapchainSupportDetails.capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
 		{
@@ -97,7 +97,7 @@ namespace Mixel
 		}
 	}
 
-	bool MxVulkanSwapchain::setup(const MxVulkanManager* manager)
+	bool MxVkSwapchain::setup(const MxVkManager* manager)
 	{
 		if (mIsReady)
 			destroy();
@@ -107,7 +107,7 @@ namespace Mixel
 		return true;
 	}
 
-	std::vector<VkSurfaceFormatKHR> MxVulkanSwapchain::getSupportFormat() const
+	std::vector<VkSurfaceFormatKHR> MxVkSwapchain::getSupportFormat() const
 	{
 		if (mIsReady)
 			return mSwapchainSupportDetails.formats;
@@ -115,7 +115,7 @@ namespace Mixel
 			return std::vector<VkSurfaceFormatKHR>();
 	}
 
-	std::vector<VkPresentModeKHR> MxVulkanSwapchain::getSupportPresentMode() const
+	std::vector<VkPresentModeKHR> MxVkSwapchain::getSupportPresentMode() const
 	{
 		if (mIsReady)
 			return mSwapchainSupportDetails.presentModes;
@@ -123,7 +123,7 @@ namespace Mixel
 			return std::vector<VkPresentModeKHR>();
 	}
 
-	bool MxVulkanSwapchain::createSwapchain(const std::vector<VkSurfaceFormatKHR>& rqFormats, VkPresentModeKHR rqPresentMode, VkExtent2D rqExtent)
+	bool MxVkSwapchain::createSwapchain(const std::vector<VkSurfaceFormatKHR>& rqFormats, VkPresentModeKHR rqPresentMode, VkExtent2D rqExtent)
 	{
 		if (!mIsReady)
 			return false;
@@ -202,7 +202,7 @@ namespace Mixel
 		return true;
 	}
 
-	void MxVulkanSwapchain::destroy()
+	void MxVkSwapchain::destroy()
 	{
 		if (!mIsReady)
 			return;
@@ -222,7 +222,7 @@ namespace Mixel
 		mManager = nullptr;
 	}
 
-	MxVulkanSwapchain::~MxVulkanSwapchain()
+	MxVkSwapchain::~MxVkSwapchain()
 	{
 		destroy();
 	}

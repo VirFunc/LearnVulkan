@@ -1,20 +1,19 @@
 #pragma once
-#ifndef _MX_VULKAN_RENDER_PASS_H_
-#define _MX_VULKAN_RENDER_PASS_H_
+#ifndef _MX_VK_RENDER_PASS_H_
+#define _MX_VK_RENDER_PASS_H_
 
-#include"MxVulkanManager.h"
+#include"MxVkManager.h"
 
 #include<vector>
-#include<initializer_list>
 
 namespace Mixel
 {
-	class MxVulkanRenderPass
+	class MxVkRenderPass
 	{
 	private:
 		bool mIsReady;
 
-		const MxVulkanManager* mManager;
+		const MxVkManager* mManager;
 		VkRenderPass mRenderPass;
 
 		struct SubpassContent
@@ -36,8 +35,8 @@ namespace Mixel
 
 		void clear();
 	public:
-		MxVulkanRenderPass();
-		bool setup(const MxVulkanManager* manager);
+		MxVkRenderPass();
+		bool setup(const MxVkManager* manager);
 		size_t addColorAttach(VkFormat format, VkSampleCountFlagBits sampleCount,
 							  VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOp,
 							  VkImageLayout initLayout, VkImageLayout finalLayout);
@@ -56,11 +55,16 @@ namespace Mixel
 							 VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
 							 VkAccessFlags srcAccess, VkAccessFlags dstAccess);
 		bool createRenderPass();
-		void destroy();
-		~MxVulkanRenderPass();
+		VkRenderPass getRenderPass() const { return mRenderPass; };
+		void beginRenderPass(const VkCommandBuffer commandBuffer, const VkFramebuffer frameBuffer, std::vector<VkClearValue>& clearValues,
+							 const VkExtent2D& extent, const VkOffset2D& offset = { 0,0 },
+							 const VkSubpassContents subpassContent = VK_SUBPASS_CONTENTS_INLINE);
+		void endRenderPass(const VkCommandBuffer commandBuffer);
+			void destroy();
+		~MxVkRenderPass();
 
 	};
 }
 
-#endif // !_MX_VULKAN_RENDER_PASS_H_
+#endif // !_MX_VK_RENDER_PASS_H_
 

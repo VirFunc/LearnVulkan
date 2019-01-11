@@ -1,6 +1,6 @@
 #pragma once
-#ifndef _MX_VULKAN_UTILS_H_
-#define _MX_VULKAN_UTILS_H_
+#ifndef _MX_VK_UTILS_H_
+#define _MX_VK_UTILS_H_
 
 #include<vulkan/vulkan.h>
 
@@ -12,14 +12,14 @@
 namespace Mixel
 {
 
-	struct MxVulkanQueueFamilyIndices
+	struct MxVkQueueFamilyIndices
 	{
 		uint32_t graphics;
 		uint32_t present;
 		uint32_t compute;
 	};
 
-	struct MxVulkanQueue
+	struct MxVkQueue
 	{
 		VkQueue graphics;
 		VkQueue present;
@@ -30,7 +30,7 @@ namespace Mixel
 
 
 }
-#endif // !_MX_VULKAN_UTILS_H_
+#endif // !_MX_VK_UTILS_H_
 
 //check the result returned by vkxxx
 #define MX_VK_CHECK_RESULT(r)										\
@@ -41,3 +41,7 @@ namespace Mixel
 		throw std::runtime_error("Error : "+Mixel::mxErrorString(result)+" at "+__FILE__+" : "+std::to_string(__LINE__));  				\
 	}																\
 }
+
+#define MX_FREE_OBJECT(p)											\
+	if((p)!=nullptr)												\
+		delete (p);

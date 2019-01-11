@@ -9,7 +9,6 @@ struct Vertex
 {
 	glm::vec3 pos;
 	glm::vec3 color;
-	glm::vec2 texCoord;
 
 	//返回Vertex对于的顶点绑定(VertexInputBinding)描述
 	static VkVertexInputBindingDescription getBindingDescription()
@@ -22,9 +21,9 @@ struct Vertex
 	}
 
 	//返回顶点数据中每个 属性的描述 
-	static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescription()
+	static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescription()
 	{
-		std::array<VkVertexInputAttributeDescription, 3> attributeDescription = {};
+		std::array<VkVertexInputAttributeDescription, 2> attributeDescription = {};
 		attributeDescription[0].binding = 0; //顶点数据的绑定点
 		attributeDescription[0].location = 0; //在vertex shader中的location
 		attributeDescription[0].format = VK_FORMAT_R32G32B32_SFLOAT; //属性的数据格式
@@ -35,57 +34,83 @@ struct Vertex
 		attributeDescription[1].format = VK_FORMAT_R32G32B32_SFLOAT;
 		attributeDescription[1].offset = offsetof(Vertex, color);
 
-		attributeDescription[2].binding = 0;
-		attributeDescription[2].location = 2;
-		attributeDescription[2].format = VK_FORMAT_R32G32_SFLOAT;
-		attributeDescription[2].offset = offsetof(Vertex, texCoord);
-
 		return attributeDescription;
 	}
+};
+
+const std::vector<Vertex> vertices =
+{
+	{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+	{{ 0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+	{{ 0.5f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+	{{-0.5f,  0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}}
+};
+
+struct UniformBufferObj
+{
+	glm::mat4 model;
+	glm::mat4 view;
+	glm::mat4 proj;
 };
 
 class TestDemo
 {
 private:
 	Mixel::MxWindow* mWindow;
-	Mixel::MxVulkanManager* mManager;
-	Mixel::MxVulkanDebug* mDebug;
-	Mixel::MxVulkanShaderHelper* mShaderHelper;
-	Mixel::MxVulkanSwapchain* mSwapchain;
-	Mixel::MxVulkanRenderPass* mRenderPass;
-	Mixel::MxVulkanDescriptorSetLayout* mDescriptorSetLayout;
-	Mixel::MxVulkanDescriptorPool* mDescriptorPool;
-	Mixel::MxVulkanPipeline* mPipeline;
-	std::vector<Mixel::MxVulkanFramebuffer*> mFramebuffers;
+	Mixel::MxVkManager* mManager;
+	Mixel::MxVkDebug* mDebug;
+	Mixel::MxVkShaderHelper* mShaderHelper;
+	Mixel::MxVkSwapchain* mSwapchain;
+	Mixel::MxVkRenderPass* mRenderPass;
+	Mixel::MxVkDescriptorSetLayout* mDescriptorSetLayout;
+	Mixel::MxVkDescriptorPool* mDescriptorPool;
+	std::vector<VkDescriptorSet> mDescriptorSets;
+	Mixel::MxVkPipeline* mPipeline;
+	Mixel::MxVkCommandPool* mCommandPool;
+	std::vector<Mixel::MxVkCommandPool::CommandBufferIterator> mCommandBuffers;
+	std::vector<Mixel::MxVkBuffer*> mUniformBuffers;
+	std::vector<Mixel::MxVkFramebuffer*> mFramebuffers;
 
 	VkSampleCountFlagBits mSampleCount;
 	VkViewport mViewport;
 	VkRect2D mScissor;
-	Mixel::MxVulkanImage* mDepthImage;
+	Mixel::MxVkImage* mDepthImage;
+
+	Mixel::MxVkBuffer* mVertexBuffer;
 public:
 	TestDemo();
 	~TestDemo() = default;
 	bool init();
 	void run() {};
-	void destroy() {};
+	void destroy();
 };
 
 int main()
 {
+	if (SDL_Init(SDL_INIT_VIDEO) != 0)
+	{
+		std::cerr << "Error : Failed to initialize SDL2!" << std::endl;
+		return -1;
+	}
+
+	TestDemo demo;
+	demo.init();
+	demo.run();
+	demo.destroy();
 	return 0;
 }
 
 TestDemo::TestDemo()
 {
 	mWindow = new Mixel::MxWindow;
-	mManager = new Mixel::MxVulkanManager;
-	mDebug = new Mixel::MxVulkanDebug;
-	mShaderHelper = new Mixel::MxVulkanShaderHelper;
-	mSwapchain = new Mixel::MxVulkanSwapchain;
-	mRenderPass = new Mixel::MxVulkanRenderPass;
-	mDescriptorPool = new Mixel::MxVulkanDescriptorPool;
-	mDescriptorSetLayout = new Mixel::MxVulkanDescriptorSetLayout;
-	mPipeline = new Mixel::MxVulkanPipeline;
+	mManager = new Mixel::MxVkManager;
+	mDebug = new Mixel::MxVkDebug;
+	mShaderHelper = new Mixel::MxVkShaderHelper;
+	mSwapchain = new Mixel::MxVkSwapchain;
+	mRenderPass = new Mixel::MxVkRenderPass;
+	mDescriptorPool = new Mixel::MxVkDescriptorPool;
+	mDescriptorSetLayout = new Mixel::MxVkDescriptorSetLayout;
+	mPipeline = new Mixel::MxVkPipeline;
 
 	mSampleCount = VK_SAMPLE_COUNT_1_BIT;
 }
@@ -121,7 +146,7 @@ bool TestDemo::init()
 		mShaderHelper->setup(mManager);
 
 		//setup debug
-		mDebug->setDefaultCallback(Mixel::MxVulkanDebug::SEVERITY_ALL, Mixel::MxVulkanDebug::TYPE_ALL);
+		mDebug->setDefaultCallback(Mixel::MxVkDebug::SEVERITY_ALL, Mixel::MxVkDebug::TYPE_ALL);
 
 		//setup swapchain
 		auto rect = mWindow->getWindowRect();
@@ -153,7 +178,6 @@ bool TestDemo::init()
 		//setup descriptor
 		mDescriptorSetLayout->setup(mManager);
 		mDescriptorSetLayout->addBindings(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
-		mDescriptorSetLayout->addBindings(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
 		mDescriptorSetLayout->createDescriptorSetLayout();
 
 		//load shader
@@ -163,13 +187,15 @@ bool TestDemo::init()
 
 		//setup graphics pipeline
 		mPipeline->setup(mManager);
+		mPipeline->setTargetRenderPass(mRenderPass->getRenderPass(), 0);
+
 		mPipeline->addShader(vertexShader->stage, vertexShader->module);
 		mPipeline->addShader(fragShader->stage, fragShader->module);
 
 		//setup vertex input state
 		//todo create a new class to deal with this
-		std::vector<VkVertexInputBindingDescription> inputBinding(1);
-		std::vector<VkVertexInputAttributeDescription> inputAttri(1);
+		std::vector<VkVertexInputBindingDescription> inputBinding;
+		std::vector<VkVertexInputAttributeDescription> inputAttri;
 		inputBinding.push_back(Vertex::getBindingDescription());
 		auto attri = Vertex::getAttributeDescription();
 		inputAttri.insert(inputAttri.end(), attri.begin(), attri.end());
@@ -181,14 +207,15 @@ bool TestDemo::init()
 		//setup viewport
 		mViewport.x = 0;
 		mViewport.y = 0;
-		mViewport.width = mWindow->getWindowRect().width;
-		mViewport.height = mWindow->getWindowRect().height;
+		mViewport.width = static_cast<float>(mWindow->getWindowRect().width);
+		mViewport.height = static_cast<float>(mWindow->getWindowRect().height);
 		mViewport.minDepth = 0.0f;
 		mViewport.maxDepth = 1.0f;
 		mPipeline->addViewport(mViewport);
 
 		mScissor.extent = mSwapchain->getCurrExtent();
 		mScissor.offset = { 0,0 };
+		mPipeline->addScissor(mScissor);
 
 		//setup rasterization
 		mPipeline->setRasterization(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
@@ -213,26 +240,122 @@ bool TestDemo::init()
 		mPipeline->createPipeline();
 
 		//create depth stencil buffer
-		mDepthImage = Mixel::MxVulkanImage::createDepthStencil(mManager,);
+		mDepthImage = Mixel::MxVkImage::createDepthStencil(mManager, VK_FORMAT_D24_UNORM_S8_UINT,
+															   mSwapchain->getCurrExtent(),
+															   mSampleCount);
 
 		//setup framebuffer
 		std::vector<VkImageView> attachments;
 		mFramebuffers.resize(mSwapchain->getImageCount());
 		for (uint32_t i = 0; i < mFramebuffers.size(); ++i)
 		{
-			mFramebuffers[i] = new Mixel::MxVulkanFramebuffer;
+			mFramebuffers[i] = new Mixel::MxVkFramebuffer;
 			mFramebuffers[i]->setup(mManager);
-			mFramebuffers[i]->setExtent({ rect.width,rect.height });
+			mFramebuffers[i]->setExtent({ static_cast<uint32_t>(rect.width),static_cast<uint32_t>(rect.height) });
 			mFramebuffers[i]->setLayers(1);
 
 			attachments = { mSwapchain->getImageViews()[i],mDepthImage->view };
 			mFramebuffers[i]->addAttachments(attachments);
 		}
+
+		//create vertex buffer
+		{
+			VkDeviceSize bufferSize = sizeof(Vertex) * vertices.size();
+			//temporary buffer
+			mVertexBuffer = Mixel::MxVkBuffer::createBuffer(mManager, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+																VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, bufferSize);
+			Mixel::MxVkBuffer::copyToDeviceBuffer(mManager, mCommandPool, mVertexBuffer, vertices.data());
+		}
+
+		//create uniform buffer
+		{
+			mUniformBuffers.resize(mSwapchain->getImageCount());
+			for (size_t i = 0; i < mSwapchain->getImageCount(); ++i)
+			{
+				mUniformBuffers[i] = Mixel::MxVkBuffer::createBuffer(mManager, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+																		 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+																		 sizeof(UniformBufferObj));
+			}
+		}
+
+		//create descriptor pool
+		mDescriptorPool->addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, mSwapchain->getImageCount());
+		mDescriptorPool->createDescriptorPool(mSwapchain->getImageCount());
+
+		//allocate descriptor sets
+		mDescriptorSets = mDescriptorPool->allocDescriptorSet(*mDescriptorSetLayout, mSwapchain->getImageCount());
+
+		//create commandbuffer
+		{
+			auto its = mCommandPool->allocCommandBuffers(VK_COMMAND_BUFFER_LEVEL_PRIMARY, mSwapchain->getImageCount());
+			mCommandBuffers.assign(its.first, its.second);
+
+			for (size_t i = 0; i < mCommandBuffers.size(); ++i)
+			{
+				//begin command buffer
+				mCommandPool->beginCommandBuffer(mCommandBuffers[i]);
+
+				std::vector<VkClearValue> clearValues(2);
+				clearValues[0].color = { 0.0f,0.0f,0.0f,1.0f };
+				clearValues[1].depthStencil = { 1.0f,0 };
+
+				//begin render pass
+				mRenderPass->beginRenderPass(*mCommandBuffers[i], mFramebuffers[i]->getFramebuffer(), clearValues,
+											 mSwapchain->getCurrExtent());
+
+				//bind pipeline
+				vkCmdBindPipeline(*mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline->getPipeline());
+
+				//bind vertex buffer
+				VkBuffer vertexBuffers[] = { mVertexBuffer->buffer };
+				VkDeviceSize offsets[] = { 0 };
+				vkCmdBindVertexBuffers(*mCommandBuffers[i], 0, 1, vertexBuffers, offsets);
+
+				//bind descriptor sets
+				vkCmdBindDescriptorSets(*mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline->getPipelineLayout(),
+										0, //第一个描述符集合的索引 
+										1, //描述符的数量
+										&mDescriptorSets[i], //描述符数组
+										0, nullptr);
+
+				//draw
+				vkCmdDraw(*mCommandBuffers[i], vertices.size(), 1, 0, 0);
+
+				//end render pass
+				mRenderPass->endRenderPass(*mCommandBuffers[i]);
+
+				//end command buffer
+				mCommandPool->endCommandBuffer(mCommandBuffers[i]);
+			}
+		}
+
 	}
+
 	catch (const std::exception& e)
 	{
 		std::cout << e.what() << std::ends << std::endl;
 	}
 
 	return true;
+}
+
+void TestDemo::destroy()
+{
+	for (auto& framebuffer : mFramebuffers)
+		MX_FREE_OBJECT(framebuffer);
+
+	MX_FREE_OBJECT(mShaderHelper);
+	MX_FREE_OBJECT(mSwapchain);
+	MX_FREE_OBJECT(mDescriptorSetLayout);
+	MX_FREE_OBJECT(mDescriptorPool);
+	MX_FREE_OBJECT(mPipeline);
+	MX_FREE_OBJECT(mRenderPass);
+	MX_FREE_OBJECT(mDebug);
+
+	vkDestroyImageView(mManager->getDevice(), mDepthImage->view, nullptr);
+	vkDestroyImage(mManager->getDevice(), mDepthImage->image, nullptr);
+	vkFreeMemory(mManager->getDevice(), mDepthImage->memory, nullptr);
+
+	MX_FREE_OBJECT(mManager);
+	MX_FREE_OBJECT(mWindow);
 }

@@ -1,19 +1,19 @@
 #pragma once
-#ifndef _MX_VULKAN_PIPELINE_H_
-#define _MX_VULKAN_PIPELINE_H_
+#ifndef _MX_VK_PIPELINE_H_
+#define _MX_VK_PIPELINE_H_
 
-#include"MxVulkanManager.h"
+#include"MxVkManager.h"
 
 #include<vector>
 
 namespace Mixel
 {
-	class MxVulkanPipeline
+	class MxVkPipeline
 	{
 	private:
 		bool mIsReady;
 
-		const MxVulkanManager* mManager;
+		const MxVkManager* mManager;
 		VkPipeline mPipeline;
 		VkPipelineLayout mPipelineLayout;
 		VkRenderPass mRenderPass;
@@ -38,8 +38,8 @@ namespace Mixel
 
 		void clear();
 	public:
-		MxVulkanPipeline();
-		bool setup(const MxVulkanManager* manager);
+		MxVkPipeline();
+		bool setup(const MxVkManager* manager);
 
 		void setTargetRenderPass(const VkRenderPass renderPass, const uint32_t subpassIndex);
 
@@ -102,8 +102,8 @@ namespace Mixel
 
 		void destroy();
 
-		~MxVulkanPipeline();
+		~MxVkPipeline();
 	};
 }
 
-#endif // !_MX_VULKAN_PIPELINE_H_
+#endif // !_MX_VK_PIPELINE_H_

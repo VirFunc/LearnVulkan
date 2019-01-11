@@ -1,20 +1,20 @@
 #pragma once
-#ifndef _MX_VULKAN_SWAPCHAIN_H_
-#define _MX_VULKAN_SWAPCHAIN_H_
+#ifndef _MX_VK_SWAPCHAIN_H_
+#define _MX_VK_SWAPCHAIN_H_
 
-#include"MxVulkanImage.h"
-#include"MxVulkanManager.h"
+#include"MxVkImage.h"
+#include"MxVkManager.h"
 
 #include<vector>
 #include<algorithm>
 
 namespace Mixel
 {
-	class MxVulkanSwapchain
+	class MxVkSwapchain
 	{
 	private:
 		bool mIsReady;
-		const MxVulkanManager* mManager;
+		const MxVkManager* mManager;
 
 		VkSwapchainKHR mSwapchain;
 		VkSurfaceFormatKHR mCurrFormat;
@@ -38,8 +38,8 @@ namespace Mixel
 		VkExtent2D chooseExtent(const VkExtent2D& rqExtent);
 
 	public:
-		MxVulkanSwapchain();
-		bool setup(const MxVulkanManager* manager);
+		MxVkSwapchain();
+		bool setup(const MxVkManager* manager);
 		std::vector<VkSurfaceFormatKHR> getSupportFormat() const;
 		std::vector<VkPresentModeKHR> getSupportPresentMode() const;
 		bool createSwapchain(const std::vector<VkSurfaceFormatKHR>& rqFormats,
@@ -51,7 +51,7 @@ namespace Mixel
 		uint32_t getImageCount() const { return mSwapChainImages.size(); };
 		const std::vector<VkImageView> getImageViews() const { return mSwapChainImageViews; };
 		void destroy();
-		~MxVulkanSwapchain();
+		~MxVkSwapchain();
 	};
 }
 

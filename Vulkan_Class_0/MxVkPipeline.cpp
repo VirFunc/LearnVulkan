@@ -1,13 +1,13 @@
-#include "MxVulkanPipeline.h"
+#include "MxVkPipeline.h"
 
 namespace Mixel
 {
-	MxVulkanPipeline::MxVulkanPipeline() :mIsReady(false), mManager(nullptr),
+	MxVkPipeline::MxVkPipeline() :mIsReady(false), mManager(nullptr),
 		mPipeline(VK_NULL_HANDLE), mPipelineLayout(VK_NULL_HANDLE), mPipelineStates(nullptr)
 	{
 	}
 
-	void MxVulkanPipeline::clear()
+	void MxVkPipeline::clear()
 	{
 		if (mPipelineStates)
 		{
@@ -16,7 +16,7 @@ namespace Mixel
 		}
 	}
 
-	bool MxVulkanPipeline::setup(const MxVulkanManager * manager)
+	bool MxVkPipeline::setup(const MxVkManager * manager)
 	{
 		if (mIsReady)
 			destroy();
@@ -30,24 +30,35 @@ namespace Mixel
 			return false;
 		}
 
+		mPipelineStates->vertexInput = {};
 		mPipelineStates->vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+
+		mPipelineStates->inputAssembly = {};
 		mPipelineStates->inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+
+		mPipelineStates->rasterization = {};
 		mPipelineStates->rasterization.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+
+		mPipelineStates->multisample = {};
 		mPipelineStates->multisample.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+
+		mPipelineStates->depthStencil = {};
 		mPipelineStates->depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+
+		mPipelineStates->colorBlend = {};
 		mPipelineStates->colorBlend.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 
 		mIsReady = true;
 		return true;
 	}
 
-	void MxVulkanPipeline::setTargetRenderPass(const VkRenderPass renderPass, const uint32_t subpassIndex)
+	void MxVkPipeline::setTargetRenderPass(const VkRenderPass renderPass, const uint32_t subpassIndex)
 	{
 		mRenderPass = renderPass;
 		mSubpassIndex = subpassIndex;
 	}
 
-	void MxVulkanPipeline::addShader(const VkShaderStageFlagBits stage, const VkShaderModule shader)
+	void MxVkPipeline::addShader(const VkShaderStageFlagBits stage, const VkShaderModule shader)
 	{
 		static char pName[] = "main";
 		VkPipelineShaderStageCreateInfo createInfo = {};
@@ -59,7 +70,7 @@ namespace Mixel
 		mPipelineStates->shaders.push_back(std::move(createInfo));
 	}
 
-	void MxVulkanPipeline::setVertexInput(const std::vector<VkVertexInputBindingDescription>& bindingDescri, const std::vector<VkVertexInputAttributeDescription>& attriDescri)
+	void MxVkPipeline::setVertexInput(const std::vector<VkVertexInputBindingDescription>& bindingDescri, const std::vector<VkVertexInputAttributeDescription>& attriDescri)
 	{
 		mPipelineStates->vertexInput.pVertexBindingDescriptions = bindingDescri.data();
 		mPipelineStates->vertexInput.vertexBindingDescriptionCount = bindingDescri.size();
@@ -67,33 +78,33 @@ namespace Mixel
 		mPipelineStates->vertexInput.vertexAttributeDescriptionCount = attriDescri.size();
 	}
 
-	void MxVulkanPipeline::setInputAssembly(const VkPrimitiveTopology topology, const bool primitiveRestart)
+	void MxVkPipeline::setInputAssembly(const VkPrimitiveTopology topology, const bool primitiveRestart)
 	{
 		mPipelineStates->inputAssembly.topology = topology;
 		mPipelineStates->inputAssembly.primitiveRestartEnable = primitiveRestart;
 	}
 
-	void MxVulkanPipeline::addViewport(const std::vector<VkViewport>& viewports)
+	void MxVkPipeline::addViewport(const std::vector<VkViewport>& viewports)
 	{
 		mPipelineStates->viewports.insert(mPipelineStates->viewports.end(), viewports.begin(), viewports.end());
 	}
 
-	void MxVulkanPipeline::addViewport(const VkViewport& viewport)
+	void MxVkPipeline::addViewport(const VkViewport& viewport)
 	{
 		mPipelineStates->viewports.push_back(viewport);
 	}
 
-	void MxVulkanPipeline::addScissor(const std::vector<VkRect2D>& scissors)
+	void MxVkPipeline::addScissor(const std::vector<VkRect2D>& scissors)
 	{
 		mPipelineStates->scissors.insert(mPipelineStates->scissors.end(), scissors.begin(), scissors.end());
 	}
 
-	void MxVulkanPipeline::addScissor(const VkRect2D & scissors)
+	void MxVkPipeline::addScissor(const VkRect2D & scissors)
 	{
 		mPipelineStates->scissors.push_back(scissors);
 	}
 
-	void MxVulkanPipeline::setRasterization(const VkPolygonMode polygonMode, const VkCullModeFlags cullMode, const VkFrontFace frontFace, const float lineWidth, const bool depthClampEnable, const bool rasterizerDiscardEnable)
+	void MxVkPipeline::setRasterization(const VkPolygonMode polygonMode, const VkCullModeFlags cullMode, const VkFrontFace frontFace, const float lineWidth, const bool depthClampEnable, const bool rasterizerDiscardEnable)
 	{
 
 		mPipelineStates->rasterization.polygonMode = polygonMode;
@@ -104,7 +115,7 @@ namespace Mixel
 		mPipelineStates->rasterization.rasterizerDiscardEnable = rasterizerDiscardEnable;
 	}
 
-	void MxVulkanPipeline::setDepthBias(const bool enable, const float constantFactor, const float slopeFactor, const float clamp)
+	void MxVkPipeline::setDepthBias(const bool enable, const float constantFactor, const float slopeFactor, const float clamp)
 	{
 		mPipelineStates->rasterization.depthBiasEnable = enable;
 		mPipelineStates->rasterization.depthBiasConstantFactor = constantFactor;
@@ -112,7 +123,7 @@ namespace Mixel
 		mPipelineStates->rasterization.depthBiasClamp = clamp;
 	}
 
-	void MxVulkanPipeline::setMultiSample(const VkSampleCountFlagBits samples, const bool sampleShading, const float minSampleShading, const VkSampleMask * sampleMask, const bool alphaToCoverageEnable, const bool alphaToOneEnable)
+	void MxVkPipeline::setMultiSample(const VkSampleCountFlagBits samples, const bool sampleShading, const float minSampleShading, const VkSampleMask * sampleMask, const bool alphaToCoverageEnable, const bool alphaToOneEnable)
 	{
 
 		mPipelineStates->multisample.sampleShadingEnable = sampleShading;
@@ -123,28 +134,28 @@ namespace Mixel
 		mPipelineStates->multisample.alphaToOneEnable = alphaToOneEnable;
 	}
 
-	void MxVulkanPipeline::setDepthTest(const bool depthTestEnable, const bool depthWriteEnable, const VkCompareOp depthCompareOp)
+	void MxVkPipeline::setDepthTest(const bool depthTestEnable, const bool depthWriteEnable, const VkCompareOp depthCompareOp)
 	{
 		mPipelineStates->depthStencil.depthTestEnable = depthTestEnable;
 		mPipelineStates->depthStencil.depthWriteEnable = depthWriteEnable;
 		mPipelineStates->depthStencil.depthCompareOp = depthCompareOp;
 	}
 
-	void MxVulkanPipeline::setDepthBoundsTest(const bool enable, const float minBounds, const float maxBounds)
+	void MxVkPipeline::setDepthBoundsTest(const bool enable, const float minBounds, const float maxBounds)
 	{
 		mPipelineStates->depthStencil.depthBoundsTestEnable = enable;
 		mPipelineStates->depthStencil.minDepthBounds = minBounds;
 		mPipelineStates->depthStencil.maxDepthBounds = maxBounds;
 	}
 
-	void MxVulkanPipeline::setStencilTest(const bool enable, const VkStencilOpState & front, const VkStencilOpState & back)
+	void MxVkPipeline::setStencilTest(const bool enable, const VkStencilOpState & front, const VkStencilOpState & back)
 	{
 		mPipelineStates->depthStencil.stencilTestEnable = enable;
 		mPipelineStates->depthStencil.front = front;
 		mPipelineStates->depthStencil.back = back;
 	}
 
-	void MxVulkanPipeline::addDefaultBlendAttachments()
+	void MxVkPipeline::addDefaultBlendAttachments()
 	{
 		VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
 		colorBlendAttachment.blendEnable = true; //enable blend
@@ -164,17 +175,17 @@ namespace Mixel
 		addBlendAttachments(std::move(colorBlendAttachment));
 	}
 
-	void MxVulkanPipeline::addBlendAttachments(const VkPipelineColorBlendAttachmentState & attachment)
+	void MxVkPipeline::addBlendAttachments(const VkPipelineColorBlendAttachmentState & attachment)
 	{
 		mPipelineStates->colorBlendAttachments.push_back(attachment);
 	}
 
-	void MxVulkanPipeline::addBlendAttachments(const std::vector<VkPipelineColorBlendAttachmentState>& attachments)
+	void MxVkPipeline::addBlendAttachments(const std::vector<VkPipelineColorBlendAttachmentState>& attachments)
 	{
 		mPipelineStates->colorBlendAttachments.insert(mPipelineStates->colorBlendAttachments.end(), attachments.begin(), attachments.end());
 	}
 
-	void MxVulkanPipeline::setBlend(const bool logicalOpEnable, const VkLogicOp logicOp, const float constantR, const float constantG, const float constantB, const float constantA)
+	void MxVkPipeline::setBlend(const bool logicalOpEnable, const VkLogicOp logicOp, const float constantR, const float constantG, const float constantB, const float constantA)
 	{
 		mPipelineStates->colorBlend.logicOpEnable = logicalOpEnable;
 		mPipelineStates->colorBlend.logicOp = logicOp;
@@ -186,37 +197,37 @@ namespace Mixel
 		mPipelineStates->colorBlend.blendConstants[3] = constantA;
 	}
 
-	void MxVulkanPipeline::addDynamicState(const VkDynamicState dynamicState)
+	void MxVkPipeline::addDynamicState(const VkDynamicState dynamicState)
 	{
 		mPipelineStates->dynamicStates.push_back(dynamicState);
 	}
 
-	void MxVulkanPipeline::addDynamicState(const std::vector<VkDynamicState>& dynamicStates)
+	void MxVkPipeline::addDynamicState(const std::vector<VkDynamicState>& dynamicStates)
 	{
 		mPipelineStates->dynamicStates.insert(mPipelineStates->dynamicStates.end(), dynamicStates.begin(), dynamicStates.end());
 	}
 
-	void MxVulkanPipeline::addDescriptorSetLayout(const VkDescriptorSetLayout setLayout)
+	void MxVkPipeline::addDescriptorSetLayout(const VkDescriptorSetLayout setLayout)
 	{
 		mPipelineStates->descriptorSetLayouts.push_back(setLayout);
 	}
 
-	void MxVulkanPipeline::addDescriptorSetLayout(const std::vector<VkDescriptorSetLayout>& setLayouts)
+	void MxVkPipeline::addDescriptorSetLayout(const std::vector<VkDescriptorSetLayout>& setLayouts)
 	{
 		mPipelineStates->descriptorSetLayouts.insert(mPipelineStates->descriptorSetLayouts.end(), setLayouts.begin(), setLayouts.end());
 	}
 
-	void MxVulkanPipeline::addPushConstantRanges(const VkPushConstantRange & range)
+	void MxVkPipeline::addPushConstantRanges(const VkPushConstantRange & range)
 	{
 		mPipelineStates->pushConstantRanges.push_back(range);
 	}
 
-	void MxVulkanPipeline::addPushConstantRanges(const std::vector<VkPushConstantRange>& ranges)
+	void MxVkPipeline::addPushConstantRanges(const std::vector<VkPushConstantRange>& ranges)
 	{
 		mPipelineStates->pushConstantRanges.insert(mPipelineStates->pushConstantRanges.end(), ranges.begin(), ranges.end());
 	}
 
-	bool MxVulkanPipeline::createPipeline()
+	bool MxVkPipeline::createPipeline()
 	{
 		VkPipelineLayoutCreateInfo layoutCreateInfo = {};
 		layoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -254,7 +265,12 @@ namespace Mixel
 		pipelineCreateInfo.pMultisampleState = &mPipelineStates->multisample;
 		pipelineCreateInfo.pDepthStencilState = &mPipelineStates->depthStencil;
 		pipelineCreateInfo.pColorBlendState = &mPipelineStates->colorBlend;
-		pipelineCreateInfo.pDynamicState = &dynamicState;
+
+		if (dynamicState.dynamicStateCount == 0)
+			pipelineCreateInfo.pDynamicState = nullptr;
+		else
+			pipelineCreateInfo.pDynamicState = &dynamicState;
+
 		pipelineCreateInfo.layout = mPipelineLayout;
 		pipelineCreateInfo.renderPass = mRenderPass;
 		pipelineCreateInfo.subpass = mSubpassIndex;
@@ -269,7 +285,7 @@ namespace Mixel
 		return true;
 	}
 
-	void MxVulkanPipeline::destroy()
+	void MxVkPipeline::destroy()
 	{
 		if (!mIsReady)
 			return;
@@ -281,7 +297,7 @@ namespace Mixel
 		mPipelineLayout = VK_NULL_HANDLE;
 	}
 
-	MxVulkanPipeline::~MxVulkanPipeline()
+	MxVkPipeline::~MxVkPipeline()
 	{
 		destroy();
 	}

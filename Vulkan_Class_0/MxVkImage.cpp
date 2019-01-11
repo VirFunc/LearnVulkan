@@ -1,8 +1,8 @@
-#include "MxVulkanImage.h"
+#include "MxVkImage.h"
 
 namespace Mixel
 {
-	VkImage MxVulkanImage::createImage2D(const MxVulkanManager * manager, const VkExtent2D extent, const VkFormat format, const VkImageUsageFlags usage, const VkSampleCountFlagBits sampleCount, const VkImageTiling tiling, const VkImageLayout initialLayout, const VkSharingMode sharingMode, const uint32_t mipLevels, const uint32_t arrayLayers)
+	VkImage MxVkImage::createImage2D(const MxVkManager * manager, const VkExtent2D extent, const VkFormat format, const VkImageUsageFlags usage, const VkSampleCountFlagBits sampleCount, const VkImageTiling tiling, const VkImageLayout initialLayout, const VkSharingMode sharingMode, const uint32_t mipLevels, const uint32_t arrayLayers)
 	{
 		VkImageCreateInfo createInfo = {};
 		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -24,7 +24,7 @@ namespace Mixel
 		return tempImage;
 	}
 
-	VkImageView MxVulkanImage::createImageView2D(const MxVulkanManager* manager, const VkImage image, const VkFormat format, const VkImageAspectFlags aspectFlags, const uint32_t mipLevel, const uint32_t levelCount, const uint32_t layer, const uint32_t layerCount)
+	VkImageView MxVkImage::createImageView2D(const MxVkManager* manager, const VkImage image, const VkFormat format, const VkImageAspectFlags aspectFlags, const uint32_t mipLevel, const uint32_t levelCount, const uint32_t layer, const uint32_t layerCount)
 	{
 		VkImageViewCreateInfo viewInfo = {};
 		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -42,7 +42,7 @@ namespace Mixel
 		return imageView;
 	}
 
-	VkDeviceMemory MxVulkanImage::allocateImageMemory(const MxVulkanManager* manager, const VkImage image, const VkMemoryPropertyFlags properties)
+	VkDeviceMemory MxVkImage::allocateImageMemory(const MxVkManager* manager, const VkImage image, const VkMemoryPropertyFlags properties)
 	{
 		VkMemoryRequirements memRequirements = {};
 		vkGetImageMemoryRequirements(manager->getDevice(), image, &memRequirements);
@@ -57,16 +57,19 @@ namespace Mixel
 		return tempMemory;
 	}
 
-	MxVulkanImage * MxVulkanImage::createDepthStencil(const MxVulkanManager* manager, const VkFormat format, const VkExtent2D& extent, const VkSampleCountFlagBits sampleCount)
+	MxVkImage * MxVkImage::createDepthStencil(const MxVkManager* manager, const VkFormat format, const VkExtent2D& extent, const VkSampleCountFlagBits sampleCount)
 	{
-		MxVulkanImage* image = new MxVulkanImage;
+		MxVkImage* image = new MxVkImage;
 
-		image->image = MxVulkanImage::createImage2D(manager, extent, format,
+		image->image = MxVkImage::createImage2D(manager, extent, format,
 													VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, sampleCount);
-		image->view = MxVulkanImage::createImageView2D(manager, image->image, format, VK_IMAGE_ASPECT_DEPTH_BIT);
-		image->memory = MxVulkanImage::allocateImageMemory(manager, image->image, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		image->memory = MxVkImage::allocateImageMemory(manager, image->image, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		vkBindImageMemory(manager->getDevice(), image->image, image->memory, 0);
+		image->view = MxVkImage::createImageView2D(manager, image->image, format, VK_IMAGE_ASPECT_DEPTH_BIT);
 
 		image->extent = extent;
 		image->format = format;
+
+		return image;
 	}
 }

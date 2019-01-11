@@ -148,8 +148,7 @@ void Demo::createInstance()
 	{
 		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 		createInfo.ppEnabledLayerNames = validationLayers.data();
-	}
-	else
+	} else
 	{
 		createInfo.enabledLayerCount = 0;
 	}
@@ -253,8 +252,7 @@ void Demo::createSwapChain()
 		createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
 		createInfo.queueFamilyIndexCount = 2;
 		createInfo.pQueueFamilyIndices = queueFamilyIndices;
-	}
-	else
+	} else
 	{//如果graphics簇与present簇相同
 		createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		createInfo.queueFamilyIndexCount = 0;
@@ -322,9 +320,9 @@ void Demo::createRenderPass()
 	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR; //在subpass开始时对现有数据的操作
 	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE; //在subpass结束时是否对数据存储
 	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE; //对模板缓冲的操作
-	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE; 
+	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	// the layout the attachment image subresource will be in when a render pass instance begins
-	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; 
+	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
 	VkAttachmentReference colorAttachmentRef = {};
@@ -721,7 +719,7 @@ bool Demo::isDeviceSuitable(VkPhysicalDevice & physicalDevice)
 	vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
 
 	//检测物理设备特性是否符合要求
-	bool devicePorpertiesSuit = deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
+	bool devicePorpertiesSuit = (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
 		&& deviceFeatures.geometryShader;
 
 	//检测物理设备队列簇是否符合要求
@@ -734,13 +732,12 @@ bool Demo::isDeviceSuitable(VkPhysicalDevice & physicalDevice)
 	SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
 	bool swapChainSuit = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 
-	if (queueFamilySuit && deviceExtensionSuit && swapChainSuit)
+	if (devicePorpertiesSuit&&queueFamilySuit && deviceExtensionSuit && swapChainSuit)
 	{
 		std::cout << std::endl << "[ Physical device ] :" << std::endl
 			<< "\tDevice name : " << deviceProperties.deviceName << std::endl;
 		return true;
-	}
-	else
+	} else
 		return false;
 }
 
@@ -811,8 +808,7 @@ void Demo::createLogicalDevice()
 	{
 		deviceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 		deviceCreateInfo.ppEnabledLayerNames = validationLayers.data();
-	}
-	else
+	} else
 		deviceCreateInfo.enabledLayerCount = 0;
 
 	if (vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &device) != VK_SUCCESS)
@@ -854,8 +850,7 @@ VkExtent2D Demo::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
 	if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
 	{
 		return capabilities.currentExtent;
-	}
-	else
+	} else
 	{
 		VkExtent2D actualExtent = { WIDTH,HEIGHT };
 		actualExtent.width = std::max(capabilities.minImageExtent.width,

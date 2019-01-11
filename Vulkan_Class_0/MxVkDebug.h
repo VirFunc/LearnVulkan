@@ -1,9 +1,9 @@
 #pragma once
-#ifndef _MX_VULKAN_DEBUG_H_
-#define _MX_VULKAN_DEBUG_H_
+#ifndef _MX_VK_DEBUG_H_
+#define _MX_VK_DEBUG_H_
 #define MX_DEBUG _DEBUG
-#define i j
-#include"MxVulkanManager.h"
+
+#include"MxVkManager.h"
 
 #include<iostream>
 #include<string>
@@ -11,12 +11,12 @@
 
 namespace Mixel
 {
-	class MxVulkanDebug
+	class MxVkDebug
 	{
 	private:
 		bool mIsReady;
 
-		const MxVulkanManager* mManager;
+		const MxVkManager* mManager;
 		std::vector<VkDebugUtilsMessengerEXT> mMessengers;
 		PFN_vkCreateDebugUtilsMessengerEXT mCreateDebugUtilsMessenger;
 		PFN_vkDestroyDebugUtilsMessengerEXT mDestroyDebugUtilsMessenger;
@@ -45,15 +45,15 @@ namespace Mixel
 		};
 		typedef uint32_t Type;
 
-		MxVulkanDebug();
-		bool setup(const MxVulkanManager* manager);
+		MxVkDebug();
+		bool setup(const MxVkManager* manager);
 		bool setDebugCallback(Severity severity, Type type,
 
 							  PFN_vkDebugUtilsMessengerCallbackEXT callback,
 							  void* userData);
 		bool setDefaultCallback(Severity severity, Type type);
 		void destroy();
-		~MxVulkanDebug();
+		~MxVkDebug();
 	};
 
 }

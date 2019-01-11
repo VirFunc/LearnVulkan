@@ -21,81 +21,96 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="MxVulkanDebug.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="MxVulkanManager.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="MxVulkanSwapchain.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="MxVulkanUtils.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="MxVulkanRenderPass.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="MxVulkanCommand.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="MxVulkanDescriptor.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="MxWindow.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="MxVulkanPipeline.cpp">
+    <ClCompile Include="MxVkBuffer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="MxVulkanFramebuffer.cpp">
+    <ClCompile Include="MxVkCommandPool.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="MxVulkanImage.cpp">
+    <ClCompile Include="MxVkDebug.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MxVkDescriptor.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MxVkFramebuffer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MxVkImage.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MxVkManager.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MxVkPipeline.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MxVkRenderPass.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MxVkSwapchain.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MxVkSyncObjectPool.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MxVkUtils.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MxVkComponent.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="MxVulkanDebug.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="MxVulkanManager.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="MxVulkanSwapchain.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="MxVulkanUtils.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="MxVulkanRenderPass.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="MxVulkanCommand.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="MxVulkanDescriptor.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="MxWindow.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="MxVulkanPipeline.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="MxVulkanShader.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="MxVulkanFramebuffer.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="MxVulkanImage.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="MxVulkan.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="MxVulkanBuffer.hpp">
+    <ClInclude Include="MxVkBuffer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MxVkCommandPool.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MxVkDebug.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MxVkDescriptor.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MxVkFramebuffer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MxVkImage.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MxVkManager.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MxVkPipeline.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MxVkRenderPass.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MxVkShader.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MxVkSwapchain.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MxVkSyncObjectPool.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MxVkUtils.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MxVkComponent.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,49 +1,49 @@
 #pragma once
-#ifndef _MX_VULKAN_DESCRIPTOR_H_
-#define _MX_VULKAN_DESCRIPTOR_H_
+#ifndef _MX_VK_DESCRIPTOR_H_
+#define _MX_VK_DESCRIPTOR_H_
 
-#include"MxVulkanManager.h"
+#include"MxVkManager.h"
 
 #include<map>
 #include<vector>
 
 namespace Mixel
 {
-	class MxVulkanDescriptorSetLayout
+	class MxVkDescriptorSetLayout
 	{
 	private:
 		bool mIsReady;
-		const MxVulkanManager* mManager;
+		const MxVkManager* mManager;
 		VkDescriptorSetLayout mLayout;
 		std::vector<VkDescriptorSetLayoutBinding> mBindings;
 
 		void clear() { mBindings.clear(); }
 	public:
-		MxVulkanDescriptorSetLayout();
-		bool setup(const MxVulkanManager* manager);
+		MxVkDescriptorSetLayout();
+		bool setup(const MxVkManager* manager);
 		void addBindings(uint32_t binding, VkDescriptorType type, uint32_t count,
 						 VkShaderStageFlags stage,
 						 const VkSampler* immutableSamplers = nullptr);
 		bool createDescriptorSetLayout();
 		VkDescriptorSetLayout getDescriptorSetLayout() const { return mLayout; };
 		void destroy();
-		~MxVulkanDescriptorSetLayout() { destroy(); }
+		~MxVkDescriptorSetLayout() { destroy(); }
 	};
 
-	class MxVulkanDescriptorPool
+	class MxVkDescriptorPool
 	{
 	private:
 		bool mIsReady;
 
-		const MxVulkanManager* mManager;
+		const MxVkManager* mManager;
 		VkDescriptorPool mDescriptorPool;
 
 		std::map<VkDescriptorType, uint32_t> mPoolSizes;
 
 	public:
-		MxVulkanDescriptorPool();
+		MxVkDescriptorPool();
 
-		bool setup(const MxVulkanManager* manager);
+		bool setup(const MxVkManager* manager);
 		void addPoolSize(VkDescriptorType type, uint32_t count);
 		bool createDescriptorPool(uint32_t maxSets);
 		VkDescriptorPool getDescriptorPool() const { return mDescriptorPool; }
@@ -52,11 +52,11 @@ namespace Mixel
 		std::vector<VkDescriptorSet> allocDescriptorSet(const VkDescriptorSetLayout layout, const uint32_t count);
 		VkDescriptorSet allocDescriptorSet(const VkDescriptorSetLayout layout);
 
-		std::vector<VkDescriptorSet> allocDescriptorSet(const std::vector<MxVulkanDescriptorSetLayout>& layout);
-		std::vector<VkDescriptorSet> allocDescriptorSet(const MxVulkanDescriptorSetLayout& layout, const uint32_t count);;
-		VkDescriptorSet allocDescriptorSet(const MxVulkanDescriptorSetLayout& layout);
-		~MxVulkanDescriptorPool();
+		std::vector<VkDescriptorSet> allocDescriptorSet(const std::vector<MxVkDescriptorSetLayout>& layout);
+		std::vector<VkDescriptorSet> allocDescriptorSet(const MxVkDescriptorSetLayout& layout, const uint32_t count);;
+		VkDescriptorSet allocDescriptorSet(const MxVkDescriptorSetLayout& layout);
+		~MxVkDescriptorPool();
 		void destroy();
 	};
 }
-#endif // !_MX_VULKAN_DESCRIPTOR_H_
+#endif // !_MX_VK_DESCRIPTOR_H_

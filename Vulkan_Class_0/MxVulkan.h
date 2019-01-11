@@ -6,17 +6,17 @@
 #include<vulkan/vulkan.h>
 #endif // !
 
-#include"MxVulkanManager.h"
-#include"MxVulkanCommand.h"
-#include"MxVulkanDebug.h"
-#include"MxVulkanDescriptor.h"
-#include"MxVulkanFramebuffer.h"
-#include"MxVulkanImage.h"
-#include"MxVulkanPipeline.h"
-#include"MxVulkanRenderPass.h"
-#include"MxVulkanSwapchain.h"
-#include"MxVulkanShader.hpp"
-#include"MxVulkanBuffer.hpp"
-#include"MxVulkanUtils.h"
+#include"MxVkManager.h"
+#include"MxVkCommandPool.h"
+#include"MxVkDebug.h"
+#include"MxVkDescriptor.h"
+#include"MxVkFramebuffer.h"
+#include"MxVkImage.h"
+#include"MxVkPipeline.h"
+#include"MxVkRenderPass.h"
+#include"MxVkSwapchain.h"
+#include"MxVkShader.hpp"
+#include"MxVkBuffer.h"
+#include"MxVkUtils.h"
 
 #endif // !_MX_VULKAN_H_

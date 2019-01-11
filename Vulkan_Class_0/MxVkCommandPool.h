@@ -1,21 +1,22 @@
 #pragma once
-#ifndef _MX_VULKAN_COMMAND_H_
-#define _MX_VULKAN_COMMAND_H_
+#ifndef _MX_VK_COMMAND_H_
+#define _MX_VK_COMMAND_H_
 
-#include"MxVulkanManager.h"
+#include"MxVkManager.h"
 
 #include<vector>
 #include<list>
 #include<initializer_list>
+#include<utility>
 
 namespace Mixel
 {
-	class MxVulkanCommand
+	class MxVkCommandPool
 	{
 	private:
 		bool mIsReady;
 
-		const MxVulkanManager* mManager;
+		const MxVkManager* mManager;
 		VkQueue mQueue;
 
 		VkCommandPool mCommandPool;
@@ -23,21 +24,22 @@ namespace Mixel
 
 		static VkCommandBufferAllocateInfo sTempBufferAllocInfo;
 		static VkCommandBufferBeginInfo sTempBufferBeginInfo;
-		
+
 	public:
 		using CommandBufferIterator = std::list<VkCommandBuffer>::const_iterator;
+		using CommandBufferRange = std::pair<CommandBufferIterator, CommandBufferIterator>;
 
-		MxVulkanCommand();
-		bool setup(const MxVulkanManager* manager);
+		MxVkCommandPool();
+		bool setup(const MxVkManager* manager);
 		bool createCommandPool(VkQueueFlagBits queueType);
-		CommandBufferIterator allocCommandBuffers(VkCommandBufferLevel level, uint32_t count);
-		bool beginCommandBuffer(CommandBufferIterator it,VkCommandBufferUsageFlagBits usage= VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+		CommandBufferRange allocCommandBuffers(VkCommandBufferLevel level, uint32_t count);
+		bool beginCommandBuffer(CommandBufferIterator it, VkCommandBufferUsageFlagBits usage = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
 		bool endCommandBuffer(CommandBufferIterator it);
 		void freeCommandBuffers(const std::initializer_list<CommandBufferIterator>& its);
 		VkCommandBuffer beginTempCommandBuffer();
 		void endTempCommandBuffer(VkCommandBuffer commandBuffer);
 		void destroy();
-		~MxVulkanCommand();
+		~MxVkCommandPool();
 	};
 }
-#endif // !_MX_VULKAN_COMMAND_H_
+#endif // !_MX_VK_COMMAND_H_

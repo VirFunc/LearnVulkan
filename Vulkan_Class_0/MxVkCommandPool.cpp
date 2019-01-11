@@ -1,21 +1,21 @@
-#include "MxVulkanCommand.h"
+#include "MxVkCommandPool.h"
 namespace Mixel
 {
-	MxVulkanCommand::MxVulkanCommand() :mIsReady(false), mManager(nullptr), mCommandPool(VK_NULL_HANDLE)
+	MxVkCommandPool::MxVkCommandPool() :mIsReady(false), mManager(nullptr), mCommandPool(VK_NULL_HANDLE)
 	{
 	}
 
-	VkCommandBufferAllocateInfo MxVulkanCommand::sTempBufferAllocInfo = {
+	VkCommandBufferAllocateInfo MxVkCommandPool::sTempBufferAllocInfo = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
 		nullptr, VK_NULL_HANDLE, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1
 	};
 
-	VkCommandBufferBeginInfo MxVulkanCommand::sTempBufferBeginInfo = {
+	VkCommandBufferBeginInfo MxVkCommandPool::sTempBufferBeginInfo = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
 		VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr
 	};
 
-	bool MxVulkanCommand::setup(const MxVulkanManager * manager)
+	bool MxVkCommandPool::setup(const MxVkManager * manager)
 	{
 		if (mIsReady)
 			destroy();
@@ -25,7 +25,7 @@ namespace Mixel
 		return true;
 	}
 
-	bool MxVulkanCommand::createCommandPool(VkQueueFlagBits queueType)
+	bool MxVkCommandPool::createCommandPool(VkQueueFlagBits queueType)
 	{
 		if (!mIsReady)
 			return false;
@@ -49,7 +49,7 @@ namespace Mixel
 		return true;
 	}
 
-	MxVulkanCommand::CommandBufferIterator MxVulkanCommand::allocCommandBuffers(VkCommandBufferLevel level, uint32_t count)
+	MxVkCommandPool::CommandBufferRange MxVkCommandPool::allocCommandBuffers(VkCommandBufferLevel level, uint32_t count)
 	{
 		VkCommandBufferAllocateInfo allocateInfo = {};
 		allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -61,10 +61,10 @@ namespace Mixel
 		MX_VK_CHECK_RESULT(vkAllocateCommandBuffers(mManager->getDevice(), &allocateInfo, buffer.data()));
 		auto it = mCommandBuffers.cend();
 		mCommandBuffers.insert(mCommandBuffers.end(), buffer.cbegin(), buffer.cend());
-		return it;
+		return { it, mCommandBuffers.cend() };
 	}
 
-	bool MxVulkanCommand::beginCommandBuffer(CommandBufferIterator it, VkCommandBufferUsageFlagBits usage)
+	bool MxVkCommandPool::beginCommandBuffer(CommandBufferIterator it, VkCommandBufferUsageFlagBits usage)
 	{
 		VkCommandBufferBeginInfo beginInfo = {};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -74,13 +74,13 @@ namespace Mixel
 		return true;
 	}
 
-	bool MxVulkanCommand::endCommandBuffer(CommandBufferIterator it)
+	bool MxVkCommandPool::endCommandBuffer(CommandBufferIterator it)
 	{
 		MX_VK_CHECK_RESULT(vkEndCommandBuffer(*it));
 		return true;
 	}
 
-	void MxVulkanCommand::freeCommandBuffers(const std::initializer_list<CommandBufferIterator>& its)
+	void MxVkCommandPool::freeCommandBuffers(const std::initializer_list<CommandBufferIterator>& its)
 	{
 		std::vector<VkCommandBuffer> buffers;
 		buffers.reserve(its.size());
@@ -93,7 +93,7 @@ namespace Mixel
 		vkFreeCommandBuffers(mManager->getDevice(), mCommandPool, buffers.size(), buffers.data());
 	}
 
-	VkCommandBuffer MxVulkanCommand::beginTempCommandBuffer()
+	VkCommandBuffer MxVkCommandPool::beginTempCommandBuffer()
 	{
 		sTempBufferAllocInfo.commandPool = mCommandPool;
 		VkCommandBuffer temp;
@@ -104,7 +104,7 @@ namespace Mixel
 		return temp;
 	}
 
-	void MxVulkanCommand::endTempCommandBuffer(VkCommandBuffer commandBuffer)
+	void MxVkCommandPool::endTempCommandBuffer(VkCommandBuffer commandBuffer)
 	{
 		MX_VK_CHECK_RESULT(vkEndCommandBuffer(commandBuffer));
 		VkSubmitInfo submitInfo = {};
@@ -115,7 +115,7 @@ namespace Mixel
 		vkQueueWaitIdle(mQueue);
 	}
 
-	void MxVulkanCommand::destroy()
+	void MxVkCommandPool::destroy()
 	{
 		if (!mIsReady)
 			return;
@@ -127,7 +127,7 @@ namespace Mixel
 		mIsReady = false;
 	}
 
-	MxVulkanCommand::~MxVulkanCommand()
+	MxVkCommandPool::~MxVkCommandPool()
 	{
 		destroy();
 	}

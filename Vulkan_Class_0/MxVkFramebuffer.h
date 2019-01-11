@@ -1,19 +1,19 @@
 #pragma once
-#ifndef _MX_VULKAN_FRAMEBUFFER_H_
-#define _MX_VULKAN_FRAMEBUFFER_H_
+#ifndef _MX_VK_FRAMEBUFFER_H_
+#define _MX_VK_FRAMEBUFFER_H_
 
-#include"MxVulkanManager.h"
+#include"MxVkManager.h"
 
 #include<vector>
 
 namespace Mixel
 {
-	class MxVulkanFramebuffer
+	class MxVkFramebuffer
 	{
 	private:
 		bool mIsReady;
 
-		const MxVulkanManager* mManager;
+		const MxVkManager* mManager;
 		VkFramebuffer mFramebuffer;
 		VkRenderPass mRenderPass;
 		VkExtent2D mExtent;
@@ -23,8 +23,8 @@ namespace Mixel
 
 		void clear();
 	public:
-		MxVulkanFramebuffer();
-		bool setup(const MxVulkanManager* manager);
+		MxVkFramebuffer();
+		bool setup(const MxVkManager* manager);
 		void setTargetRenderPass(const VkRenderPass renderPass) { mRenderPass = renderPass; };
 		void setExtent(const VkExtent2D& extent) { mExtent = extent; };
 		void setLayers(const uint32_t layer) { mLayers = layer; };
@@ -32,8 +32,8 @@ namespace Mixel
 		bool createFramebuffer();
 		VkFramebuffer getFramebuffer() const { return mFramebuffer; };
 		void destroy();
-		~MxVulkanFramebuffer();
+		~MxVkFramebuffer();
 	};
 }
 
-#endif // !_MX_VULKAN_FRAMEBUFFER_H_
+#endif // !_MX_VK_FRAMEBUFFER_H_

@@ -20,32 +20,37 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="MxVulkanCommand.cpp" />
-    <ClCompile Include="MxVulkanDebug.cpp" />
-    <ClCompile Include="MxVulkanDescriptor.cpp" />
-    <ClCompile Include="MxVulkanFramebuffer.cpp" />
-    <ClCompile Include="MxVulkanImage.cpp" />
-    <ClCompile Include="MxVulkanManager.cpp" />
-    <ClCompile Include="MxVulkanPipeline.cpp" />
-    <ClCompile Include="MxVulkanRenderPass.cpp" />
-    <ClCompile Include="MxVulkanSwapchain.cpp" />
-    <ClCompile Include="MxVulkanUtils.cpp" />
+    <ClCompile Include="MxVkBuffer.cpp" />
+    <ClCompile Include="MxVkCommandPool.cpp" />
+    <ClCompile Include="MxVkDebug.cpp" />
+    <ClCompile Include="MxVkDescriptor.cpp" />
+    <ClCompile Include="MxVkFramebuffer.cpp" />
+    <ClCompile Include="MxVkImage.cpp" />
+    <ClCompile Include="MxVkManager.cpp" />
+    <ClCompile Include="MxVkComponent.cpp" />
+    <ClCompile Include="MxVkPipeline.cpp" />
+    <ClCompile Include="MxVkRenderPass.cpp" />
+    <ClCompile Include="MxVkSwapchain.cpp" />
+    <ClCompile Include="MxVkSyncObjectPool.cpp" />
+    <ClCompile Include="MxVkUtils.cpp" />
     <ClCompile Include="MxWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="MxVkComponent.h" />
     <ClInclude Include="MxVulkan.h" />
-    <ClInclude Include="MxVulkanBuffer.hpp" />
-    <ClInclude Include="MxVulkanCommand.h" />
-    <ClInclude Include="MxVulkanDebug.h" />
-    <ClInclude Include="MxVulkanDescriptor.h" />
-    <ClInclude Include="MxVulkanFramebuffer.h" />
-    <ClInclude Include="MxVulkanImage.h" />
-    <ClInclude Include="MxVulkanManager.h" />
-    <ClInclude Include="MxVulkanPipeline.h" />
-    <ClInclude Include="MxVulkanRenderPass.h" />
-    <ClInclude Include="MxVulkanShader.hpp" />
-    <ClInclude Include="MxVulkanSwapchain.h" />
-    <ClInclude Include="MxVulkanUtils.h" />
+    <ClInclude Include="MxVkBuffer.h" />
+    <ClInclude Include="MxVkCommandPool.h" />
+    <ClInclude Include="MxVkDebug.h" />
+    <ClInclude Include="MxVkDescriptor.h" />
+    <ClInclude Include="MxVkFramebuffer.h" />
+    <ClInclude Include="MxVkImage.h" />
+    <ClInclude Include="MxVkManager.h" />
+    <ClInclude Include="MxVkPipeline.h" />
+    <ClInclude Include="MxVkRenderPass.h" />
+    <ClInclude Include="MxVkShader.hpp" />
+    <ClInclude Include="MxVkSwapchain.h" />
+    <ClInclude Include="MxVkSyncObjectPool.h" />
+    <ClInclude Include="MxVkUtils.h" />
     <ClInclude Include="MxWindow.h" />
   </ItemGroup>
   <ItemGroup>

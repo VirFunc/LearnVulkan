@@ -1,17 +1,17 @@
-#include "MxVulkanFramebuffer.h"
+#include "MxVkFramebuffer.h"
 
 namespace Mixel
 {
-	void MxVulkanFramebuffer::clear()
+	void MxVkFramebuffer::clear()
 	{
 		if (mAttachments)
 			delete mAttachments;
 	}
-	MxVulkanFramebuffer::MxVulkanFramebuffer() :mIsReady(false), mManager(nullptr), mRenderPass(VK_NULL_HANDLE)
+	MxVkFramebuffer::MxVkFramebuffer() :mIsReady(false), mManager(nullptr), mRenderPass(VK_NULL_HANDLE)
 	{
 	}
 
-	bool MxVulkanFramebuffer::setup(const MxVulkanManager * manager)
+	bool MxVkFramebuffer::setup(const MxVkManager * manager)
 	{
 		if (mIsReady)
 			destroy();
@@ -24,12 +24,12 @@ namespace Mixel
 		return true;
 	}
 
-	void MxVulkanFramebuffer::addAttachments(std::vector<VkImageView>& attachments)
+	void MxVkFramebuffer::addAttachments(std::vector<VkImageView>& attachments)
 	{
 		mAttachments->insert(mAttachments->end(), attachments.begin(), attachments.end());
 	}
 
-	bool MxVulkanFramebuffer::createFramebuffer()
+	bool MxVkFramebuffer::createFramebuffer()
 	{
 		VkFramebufferCreateInfo createInfo = {};
 		createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -44,7 +44,7 @@ namespace Mixel
 		return true;
 	}
 
-	void MxVulkanFramebuffer::destroy()
+	void MxVkFramebuffer::destroy()
 	{
 		if (!mIsReady)
 			return;
@@ -60,7 +60,7 @@ namespace Mixel
 		mLayers = 0;
 	}
 
-	MxVulkanFramebuffer::~MxVulkanFramebuffer()
+	MxVkFramebuffer::~MxVkFramebuffer()
 	{
 		destroy();
 	}

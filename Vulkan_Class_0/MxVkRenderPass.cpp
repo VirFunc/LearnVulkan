@@ -1,8 +1,8 @@
-#include "MxVulkanRenderPass.h"
+#include "MxVkRenderPass.h"
 
 namespace Mixel
 {
-	void MxVulkanRenderPass::clear()
+	void MxVkRenderPass::clear()
 	{
 		if (!mIsReady)
 			return;
@@ -15,11 +15,11 @@ namespace Mixel
 		if (mSubpasses)
 			delete mSubpasses;
 	}
-	MxVulkanRenderPass::MxVulkanRenderPass() :mIsReady(false), mManager(nullptr), mRenderPass(VK_NULL_HANDLE)
+	MxVkRenderPass::MxVkRenderPass() :mIsReady(false), mManager(nullptr), mRenderPass(VK_NULL_HANDLE)
 	{
 	}
 
-	bool MxVulkanRenderPass::setup(const MxVulkanManager * manager)
+	bool MxVkRenderPass::setup(const MxVkManager * manager)
 	{
 		if (mIsReady)
 			destroy();
@@ -39,7 +39,7 @@ namespace Mixel
 		return true;
 	}
 
-	size_t MxVulkanRenderPass::addColorAttach(VkFormat format, VkSampleCountFlagBits sampleCount, VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOp, VkImageLayout initLayout, VkImageLayout finalLayout)
+	size_t MxVkRenderPass::addColorAttach(VkFormat format, VkSampleCountFlagBits sampleCount, VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOp, VkImageLayout initLayout, VkImageLayout finalLayout)
 	{
 		VkAttachmentDescription descri = {};
 		descri.format = format;
@@ -54,7 +54,7 @@ namespace Mixel
 		return mAttachments->size() - 1;
 	}
 
-	size_t MxVulkanRenderPass::addDepthStencilAttach(VkFormat format, VkSampleCountFlagBits sampleCount, VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOp, VkAttachmentLoadOp stencilLoadOp, VkAttachmentStoreOp stencilStoreOp, VkImageLayout initLayout, VkImageLayout finalLayout)
+	size_t MxVkRenderPass::addDepthStencilAttach(VkFormat format, VkSampleCountFlagBits sampleCount, VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOp, VkAttachmentLoadOp stencilLoadOp, VkAttachmentStoreOp stencilStoreOp, VkImageLayout initLayout, VkImageLayout finalLayout)
 	{
 		VkAttachmentDescription descri = {};
 		descri.format = format;
@@ -69,7 +69,7 @@ namespace Mixel
 		return mAttachments->size() - 1;
 	}
 
-	size_t MxVulkanRenderPass::addColorAttachRef(size_t index, VkImageLayout layout)
+	size_t MxVkRenderPass::addColorAttachRef(size_t index, VkImageLayout layout)
 	{
 		VkAttachmentReference ref;
 		ref.attachment = index;
@@ -78,7 +78,7 @@ namespace Mixel
 		return mAttachRefs->size() - 1;
 	}
 
-	size_t MxVulkanRenderPass::addDepthStencilAttachRef(size_t index, VkImageLayout layout)
+	size_t MxVkRenderPass::addDepthStencilAttachRef(size_t index, VkImageLayout layout)
 	{
 		VkAttachmentReference ref;
 		ref.attachment = index;
@@ -87,7 +87,7 @@ namespace Mixel
 		return mAttachRefs->size() - 1;
 	}
 
-	size_t MxVulkanRenderPass::addSubpass(VkPipelineBindPoint bindPoint)
+	size_t MxVkRenderPass::addSubpass(VkPipelineBindPoint bindPoint)
 	{
 		SubpassContent subpass;
 		subpass.bindPoint = bindPoint;
@@ -95,7 +95,7 @@ namespace Mixel
 		return mSubpasses->size() - 1;
 	}
 
-	bool MxVulkanRenderPass::addSubpassColorRef(size_t subpassIndex, const std::vector<size_t>& refIndices)
+	bool MxVkRenderPass::addSubpassColorRef(size_t subpassIndex, const std::vector<size_t>& refIndices)
 	{
 		for (auto& index : refIndices)
 		{
@@ -111,7 +111,7 @@ namespace Mixel
 		return true;
 	}
 
-	bool MxVulkanRenderPass::addSubpassColorRef(size_t subpassIndex, const size_t refIndex)
+	bool MxVkRenderPass::addSubpassColorRef(size_t subpassIndex, const size_t refIndex)
 	{
 		if (!(refIndex < mAttachRefs->size()))
 			return false;
@@ -119,7 +119,7 @@ namespace Mixel
 		return true;
 	}
 
-	bool MxVulkanRenderPass::addSubpassDepthStencilRef(size_t subpassIndex, size_t refIndex)
+	bool MxVkRenderPass::addSubpassDepthStencilRef(size_t subpassIndex, size_t refIndex)
 	{
 		if (!(refIndex < mAttachRefs->size()))
 			return false;
@@ -128,7 +128,7 @@ namespace Mixel
 		return true;
 	}
 
-	bool MxVulkanRenderPass::addSubpassResolveRef(size_t subpassIndex, size_t refIndex)
+	bool MxVkRenderPass::addSubpassResolveRef(size_t subpassIndex, size_t refIndex)
 	{
 		if (!(refIndex < mAttachRefs->size()))
 			return false;
@@ -137,7 +137,7 @@ namespace Mixel
 		return true;
 	}
 
-	size_t MxVulkanRenderPass::addDependency(size_t srcSubpass, size_t dstSubpass, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkAccessFlags srcAccess, VkAccessFlags dstAccess)
+	size_t MxVkRenderPass::addDependency(size_t srcSubpass, size_t dstSubpass, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkAccessFlags srcAccess, VkAccessFlags dstAccess)
 	{
 		if (srcSubpass != VK_SUBPASS_EXTERNAL)
 		{
@@ -160,7 +160,7 @@ namespace Mixel
 		return mDependencies->size() - 1;
 	}
 
-	bool MxVulkanRenderPass::createRenderPass()
+	bool MxVkRenderPass::createRenderPass()
 	{
 		std::vector<VkSubpassDescription> subpasses(mSubpasses->size());
 		for (uint32_t i = 0; i < subpasses.size(); ++i)
@@ -210,7 +210,26 @@ namespace Mixel
 		return true;
 	}
 
-	void MxVulkanRenderPass::destroy()
+	void MxVkRenderPass::beginRenderPass(const VkCommandBuffer commandBuffer, const VkFramebuffer frameBuffer, std::vector<VkClearValue>& clearValues, const VkExtent2D & extent, const VkOffset2D & offset, const VkSubpassContents subpassContent)
+	{
+		VkRenderPassBeginInfo beginInfo = {};
+		beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		beginInfo.renderPass = mRenderPass;
+		beginInfo.framebuffer = frameBuffer;
+		beginInfo.pClearValues = clearValues.data();
+		beginInfo.clearValueCount = clearValues.size();
+		beginInfo.renderArea.offset = offset;
+		beginInfo.renderArea.extent = extent;
+
+		vkCmdBeginRenderPass(commandBuffer, &beginInfo, subpassContent);
+	}
+
+	void MxVkRenderPass::endRenderPass(const VkCommandBuffer commandBuffer)
+	{
+		vkCmdEndRenderPass(commandBuffer);
+	}
+
+	void MxVkRenderPass::destroy()
 	{
 		if (!mIsReady)
 			return;
@@ -222,7 +241,7 @@ namespace Mixel
 	}
 
 
-	MxVulkanRenderPass::~MxVulkanRenderPass()
+	MxVkRenderPass::~MxVkRenderPass()
 	{
 		destroy();
 	}

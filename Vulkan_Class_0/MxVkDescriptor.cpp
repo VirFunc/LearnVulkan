@@ -1,13 +1,13 @@
-#include "MxVulkanDescriptor.h"
+#include "MxVkDescriptor.h"
 
 namespace Mixel
 {
-	MxVulkanDescriptorPool::MxVulkanDescriptorPool() :mIsReady(false), mManager(nullptr),
+	MxVkDescriptorPool::MxVkDescriptorPool() :mIsReady(false), mManager(nullptr),
 		mDescriptorPool(VK_NULL_HANDLE)
 	{
 	}
 
-	bool MxVulkanDescriptorPool::setup(const MxVulkanManager * manager)
+	bool MxVkDescriptorPool::setup(const MxVkManager * manager)
 	{
 		if (mIsReady)
 			destroy();
@@ -17,7 +17,7 @@ namespace Mixel
 		return true;
 	}
 
-	void MxVulkanDescriptorPool::addPoolSize(VkDescriptorType type, uint32_t count)
+	void MxVkDescriptorPool::addPoolSize(VkDescriptorType type, uint32_t count)
 	{
 		if (mPoolSizes.count(type) == 0)
 			mPoolSizes[type] = 1;
@@ -25,7 +25,7 @@ namespace Mixel
 			mPoolSizes[type] += count;
 	}
 
-	bool MxVulkanDescriptorPool::createDescriptorPool(uint32_t maxSets)
+	bool MxVkDescriptorPool::createDescriptorPool(uint32_t maxSets)
 	{
 		std::vector<VkDescriptorPoolSize> poolSizes;
 		poolSizes.reserve(mPoolSizes.size());
@@ -46,7 +46,7 @@ namespace Mixel
 		return true;
 	}
 
-	std::vector<VkDescriptorSet> MxVulkanDescriptorPool::allocDescriptorSet(const std::vector<VkDescriptorSetLayout>& layouts)
+	std::vector<VkDescriptorSet> MxVkDescriptorPool::allocDescriptorSet(const std::vector<VkDescriptorSetLayout>& layouts)
 	{
 		VkDescriptorSetAllocateInfo allocInfo = {};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -59,7 +59,7 @@ namespace Mixel
 		return tempSets;
 	}
 
-	VkDescriptorSet MxVulkanDescriptorPool::allocDescriptorSet(const VkDescriptorSetLayout layout)
+	VkDescriptorSet MxVkDescriptorPool::allocDescriptorSet(const VkDescriptorSetLayout layout)
 	{
 		VkDescriptorSetAllocateInfo allocInfo = {};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -72,13 +72,13 @@ namespace Mixel
 		return tempSet;
 	}
 
-	std::vector<VkDescriptorSet> MxVulkanDescriptorPool::allocDescriptorSet(const VkDescriptorSetLayout layout, const uint32_t count)
+	std::vector<VkDescriptorSet> MxVkDescriptorPool::allocDescriptorSet(const VkDescriptorSetLayout layout, const uint32_t count)
 	{
 		std::vector<VkDescriptorSetLayout> layouts(count, layout);
 		return allocDescriptorSet(layouts);
 	}
 
-	std::vector<VkDescriptorSet> MxVulkanDescriptorPool::allocDescriptorSet(const std::vector<MxVulkanDescriptorSetLayout>& layouts)
+	std::vector<VkDescriptorSet> MxVkDescriptorPool::allocDescriptorSet(const std::vector<MxVkDescriptorSetLayout>& layouts)
 	{
 		std::vector<VkDescriptorSetLayout> tempLayouts;
 		tempLayouts.reserve(layouts.size());
@@ -87,22 +87,22 @@ namespace Mixel
 		return allocDescriptorSet(tempLayouts);
 	}
 
-	VkDescriptorSet MxVulkanDescriptorPool::allocDescriptorSet(const MxVulkanDescriptorSetLayout & layout)
+	VkDescriptorSet MxVkDescriptorPool::allocDescriptorSet(const MxVkDescriptorSetLayout & layout)
 	{
 		return allocDescriptorSet(layout.getDescriptorSetLayout());
 	}
 
-	std::vector<VkDescriptorSet> MxVulkanDescriptorPool::allocDescriptorSet(const MxVulkanDescriptorSetLayout & layout, const uint32_t count)
+	std::vector<VkDescriptorSet> MxVkDescriptorPool::allocDescriptorSet(const MxVkDescriptorSetLayout & layout, const uint32_t count)
 	{
 		return allocDescriptorSet(layout.getDescriptorSetLayout(), count);
 	}
 
-	MxVulkanDescriptorPool::~MxVulkanDescriptorPool()
+	MxVkDescriptorPool::~MxVkDescriptorPool()
 	{
 		destroy();
 	}
 
-	void MxVulkanDescriptorPool::destroy()
+	void MxVkDescriptorPool::destroy()
 	{
 		if (!mIsReady)
 			return;
@@ -111,11 +111,11 @@ namespace Mixel
 		mIsReady = false;
 	}
 
-	MxVulkanDescriptorSetLayout::MxVulkanDescriptorSetLayout() :mIsReady(false), mManager(nullptr), mLayout(VK_NULL_HANDLE)
+	MxVkDescriptorSetLayout::MxVkDescriptorSetLayout() :mIsReady(false), mManager(nullptr), mLayout(VK_NULL_HANDLE)
 	{
 	}
 
-	bool MxVulkanDescriptorSetLayout::setup(const MxVulkanManager * manager)
+	bool MxVkDescriptorSetLayout::setup(const MxVkManager * manager)
 	{
 		if (mIsReady)
 			destroy();
@@ -125,7 +125,7 @@ namespace Mixel
 		return true;
 	}
 
-	void MxVulkanDescriptorSetLayout::addBindings(uint32_t binding, VkDescriptorType type, uint32_t count, VkShaderStageFlags stage, const VkSampler * immutableSamplers)
+	void MxVkDescriptorSetLayout::addBindings(uint32_t binding, VkDescriptorType type, uint32_t count, VkShaderStageFlags stage, const VkSampler * immutableSamplers)
 	{
 		VkDescriptorSetLayoutBinding layoutBinding = {};
 		layoutBinding.binding = binding;
@@ -133,9 +133,10 @@ namespace Mixel
 		layoutBinding.descriptorCount = count;
 		layoutBinding.stageFlags = stage;
 		layoutBinding.pImmutableSamplers = immutableSamplers;
+		mBindings.push_back(std::move(layoutBinding));
 	}
 
-	bool MxVulkanDescriptorSetLayout::createDescriptorSetLayout()
+	bool MxVkDescriptorSetLayout::createDescriptorSetLayout()
 	{
 		VkDescriptorSetLayoutCreateInfo layoutInfo = {};
 		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -148,11 +149,13 @@ namespace Mixel
 		return true;
 	}
 
-	void MxVulkanDescriptorSetLayout::destroy()
+	void MxVkDescriptorSetLayout::destroy()
 	{
 		if (!mIsReady)
 			return;
 
+		if (mLayout != VK_NULL_HANDLE)
+			vkDestroyDescriptorSetLayout(mManager->getDevice(), mLayout, nullptr);
 		clear();
 		mManager = nullptr;
 		mIsReady = false;

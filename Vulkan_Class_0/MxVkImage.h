@@ -1,12 +1,12 @@
 #pragma once
-#ifndef _MX_VULKAN_IMAGE_H_
-#define _MX_VULKAN_IMAGE_H_
+#ifndef _MX_VK_IMAGE_H_
+#define _MX_VK_IMAGE_H_
 
-#include"MxVulkanManager.h"
+#include"MxVkManager.h"
 
 namespace Mixel
 {
-	struct MxVulkanImage
+	struct MxVkImage
 	{
 		VkImage image;
 		VkImageView view;
@@ -14,7 +14,7 @@ namespace Mixel
 		VkFormat format;
 		VkExtent2D extent;
 
-		static VkImage createImage2D(const MxVulkanManager* manager,
+		static VkImage createImage2D(const MxVkManager* manager,
 									 const VkExtent2D extent,
 									 const VkFormat format,
 									 const VkImageUsageFlags usage,
@@ -24,7 +24,7 @@ namespace Mixel
 									 const VkSharingMode sharingMode = VK_SHARING_MODE_EXCLUSIVE,
 									 const uint32_t mipLevels = 1, const uint32_t arrayLayers = 1);
 
-		static VkImageView createImageView2D(const MxVulkanManager* manager,
+		static VkImageView createImageView2D(const MxVkManager* manager,
 											 const VkImage image,
 											 const VkFormat format,
 											 const VkImageAspectFlags aspectFlags,
@@ -33,11 +33,11 @@ namespace Mixel
 											 const uint32_t layer = 0,
 											 const uint32_t layerCount = 1);
 
-		static VkDeviceMemory allocateImageMemory(const MxVulkanManager* manager, const VkImage image,
+		static VkDeviceMemory allocateImageMemory(const MxVkManager* manager, const VkImage image,
 												  const VkMemoryPropertyFlags properties);
 
-		static MxVulkanImage* createDepthStencil(const MxVulkanManager* manager,
+		static MxVkImage* createDepthStencil(const MxVkManager* manager,
 												 const VkFormat format, const VkExtent2D& extent, const VkSampleCountFlagBits sampleCount);
 	};
 }
-#endif // !_MX_VULKAN_IMAGE_H_
+#endif // !_MX_VK_IMAGE_H_

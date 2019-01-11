@@ -1,8 +1,8 @@
-#include "MxVulkanDebug.h"
+#include "MxVkDebug.h"
 
 namespace Mixel
 {
-	VKAPI_ATTR VkBool32 VKAPI_CALL MxVulkanDebug::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT * pCallbackData, void * pUserData)
+	VKAPI_ATTR VkBool32 VKAPI_CALL MxVkDebug::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT * pCallbackData, void * pUserData)
 	{
 		std::string msg = "[ Validation layer ] : [ ";
 
@@ -40,12 +40,12 @@ namespace Mixel
 		return VK_FALSE;
 	}
 
-	MxVulkanDebug::MxVulkanDebug() :mIsReady(false), mManager(nullptr),
+	MxVkDebug::MxVkDebug() :mIsReady(false), mManager(nullptr),
 		mCreateDebugUtilsMessenger(VK_NULL_HANDLE), mDestroyDebugUtilsMessenger(VK_NULL_HANDLE)
 	{
 	}
 
-	bool MxVulkanDebug::setup(const MxVulkanManager* manager)
+	bool MxVkDebug::setup(const MxVkManager* manager)
 	{
 		if (mIsReady)
 			destroy();
@@ -66,12 +66,12 @@ namespace Mixel
 		}
 	}
 
-	MxVulkanDebug::~MxVulkanDebug()
+	MxVkDebug::~MxVkDebug()
 	{
 		destroy();
 	}
 
-	bool MxVulkanDebug::setDebugCallback(Severity severity, Type type, PFN_vkDebugUtilsMessengerCallbackEXT callback, void * userData)
+	bool MxVkDebug::setDebugCallback(Severity severity, Type type, PFN_vkDebugUtilsMessengerCallbackEXT callback, void * userData)
 	{
 		if (!mIsReady)
 			return false;
@@ -91,14 +91,14 @@ namespace Mixel
 		return true;
 	}
 
-	bool MxVulkanDebug::setDefaultCallback(Severity severity, Type type)
+	bool MxVkDebug::setDefaultCallback(Severity severity, Type type)
 	{
 		if (!mIsReady)
 			return false;
 		return setDebugCallback(severity, type, debugCallback, nullptr);
 	}
 
-	void MxVulkanDebug::destroy()
+	void MxVkDebug::destroy()
 	{
 		if (!mIsReady)
 			return;

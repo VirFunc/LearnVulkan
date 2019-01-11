@@ -1,8 +1,8 @@
-#include "MxVulkanManager.h"
+#include "MxVkManager.h"
 
 namespace Mixel
 {
-	void MxVulkanManager::createInstance(const InitializeInfo & info)
+	void MxVkManager::createInstance(const InitializeInfo & info)
 	{
 		if (info.debugMode && !checkValidationLayerSupport(info))
 		{
@@ -56,7 +56,7 @@ namespace Mixel
 		MX_VK_CHECK_RESULT(vkCreateInstance(&createInfo, nullptr, &mInstance.instance));
 	}
 
-	void MxVulkanManager::createSurface(const InitializeInfo & info)
+	void MxVkManager::createSurface(const InitializeInfo & info)
 	{
 		if (SDL_Vulkan_CreateSurface(info.window, mInstance.instance, &mSurface) != SDL_TRUE)
 		{
@@ -64,7 +64,7 @@ namespace Mixel
 		}
 	}
 
-	void MxVulkanManager::pickPhysicalDevice(const InitializeInfo & info)
+	void MxVkManager::pickPhysicalDevice(const InitializeInfo & info)
 	{
 		uint32_t deviceCount = 0;
 		//枚举物理设备
@@ -91,7 +91,7 @@ namespace Mixel
 			throw std::runtime_error("Error : Failed to find suitable device!");
 	}
 
-	void MxVulkanManager::createLogicalDevice(const InitializeInfo & info)
+	void MxVkManager::createLogicalDevice(const InitializeInfo & info)
 	{
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 		std::map<uint32_t, float> uniqueQueueFamilies;
@@ -146,13 +146,13 @@ namespace Mixel
 
 	}
 
-	void MxVulkanManager::getDeviceInfo()
+	void MxVkManager::getDeviceInfo()
 	{
 		//physical device memory properties
 		vkGetPhysicalDeviceMemoryProperties(mDevice.physicalDevice, &mDevice.memoryProperties);
 	}
 
-	bool MxVulkanManager::checkValidationLayerSupport(const InitializeInfo & info)
+	bool MxVkManager::checkValidationLayerSupport(const InitializeInfo & info)
 	{
 		uint32_t layerCount;
 		vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -177,7 +177,7 @@ namespace Mixel
 		return true;
 	}
 
-	bool MxVulkanManager::isDeviceSuitable(const InitializeInfo & info, const VkPhysicalDevice & device)
+	bool MxVkManager::isDeviceSuitable(const InitializeInfo & info, const VkPhysicalDevice & device)
 	{
 		//获取物理设备特性
 		VkPhysicalDeviceProperties deviceProperties;
@@ -194,7 +194,7 @@ namespace Mixel
 		return true;
 	}
 
-	bool MxVulkanManager::checkExtensions(const InitializeInfo & info, const VkPhysicalDevice & device)
+	bool MxVkManager::checkExtensions(const InitializeInfo & info, const VkPhysicalDevice & device)
 	{
 		std::vector<VkExtensionProperties> extensions = getDeviceExtensions(device);
 		bool found = false;
@@ -220,10 +220,10 @@ namespace Mixel
 		} else
 			return false;
 	}
-	bool MxVulkanManager::findQueueFamilies(const InitializeInfo & info, VkPhysicalDevice device, MxVulkanQueueFamilyIndices* indices)
+	bool MxVkManager::findQueueFamilies(const InitializeInfo & info, VkPhysicalDevice device, MxVkQueueFamilyIndices* indices)
 	{
 		//获取物理设备队列簇特性
-		MxVulkanQueueFamilyIndices tempIndices;
+		MxVkQueueFamilyIndices tempIndices;
 		uint32_t queueFamilyCount = 0;
 		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
 		std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
@@ -282,7 +282,7 @@ namespace Mixel
 		return false;
 	}
 
-	std::vector<VkExtensionProperties> MxVulkanManager::getInstanceExtensions()
+	std::vector<VkExtensionProperties> MxVkManager::getInstanceExtensions()
 	{
 		uint32_t extensionCount = 0;
 		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
@@ -291,7 +291,7 @@ namespace Mixel
 		return extensions;
 	}
 
-	std::vector<VkExtensionProperties> MxVulkanManager::getDeviceExtensions(VkPhysicalDevice device)
+	std::vector<VkExtensionProperties> MxVkManager::getDeviceExtensions(VkPhysicalDevice device)
 	{
 		uint32_t extensionCount;
 		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
@@ -300,11 +300,11 @@ namespace Mixel
 		return extensions;
 	}
 
-	MxVulkanManager::MxVulkanManager() :mIsReady(false)
+	MxVkManager::MxVkManager() :mIsReady(false)
 	{
 	}
 
-	void MxVulkanManager::initialize(const InitializeInfo & info)
+	void MxVkManager::initialize(const InitializeInfo & info)
 	{
 		if (mIsReady)
 			destroy();
@@ -317,7 +317,7 @@ namespace Mixel
 		mIsReady = true;
 	}
 
-	void MxVulkanManager::destroy()
+	void MxVkManager::destroy()
 	{
 		if (!mIsReady)
 			return;
@@ -338,7 +338,7 @@ namespace Mixel
 		mQueueFamilyIndices.present = VK_NULL_HANDLE;
 	}
 
-	MxVulkanManager::InitializeInfo * MxVulkanManager::getEmptyInitInfo() const
+	MxVkManager::InitializeInfo * MxVkManager::getEmptyInitInfo() const
 	{
 		InitializeInfo* temp = nullptr;
 		try
@@ -353,64 +353,23 @@ namespace Mixel
 		return temp;
 	}
 
-	const uint32_t MxVulkanManager::getMemoryTypeIndex(const uint32_t type, const VkMemoryPropertyFlags properties) const
+	const uint32_t MxVkManager::getMemoryTypeIndex(const uint32_t type, const VkMemoryPropertyFlags properties) const
 	{
 		for (uint32_t i = 0; i < mDevice.memoryProperties.memoryTypeCount; ++i)
 		{
 			if (type  & (1 << i) && mDevice.memoryProperties.memoryTypes[i].propertyFlags & properties)
 				return i;
 		}
+		return ~0U;
 	}
 
-	MxVulkanBuffer * MxVulkanManager::createBuffer(const VkBufferUsageFlags usage, const VkMemoryPropertyFlags memoryProperty,
-												   const VkDeviceSize size, const VkSharingMode sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-												   void * data = nullptr)
-	{
-		MxVulkanBuffer* buffer = new MxVulkanBuffer;
-		VkBufferCreateInfo createInfo = {};
-		createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		createInfo.size = size;
-		createInfo.usage = usage;
-		createInfo.sharingMode = sharingMode;
 
-		MX_VK_CHECK_RESULT(vkCreateBuffer(mDevice.logicalDevice, &createInfo, nullptr, &buffer->buffer));
-
-		VkMemoryRequirements memRequirements = {};
-		vkGetBufferMemoryRequirements(mDevice.logicalDevice, buffer->buffer, &memRequirements);
-
-		VkMemoryAllocateInfo allocInfo = {};
-		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		allocInfo.allocationSize = memRequirements.size;
-		allocInfo.memoryTypeIndex = getMemoryTypeIndex(memRequirements.memoryTypeBits, memoryProperty);
-		MX_VK_CHECK_RESULT(vkAllocateMemory(mDevice.logicalDevice, &allocInfo, nullptr, &buffer->memory));
-
-		buffer->alignment = memRequirements.alignment;
-		buffer->size = memRequirements.size;
-		buffer->usages = usage;
-		buffer->memoryProperty = memoryProperty;
-
-		if (!data)
-		{
-			MX_VK_CHECK_RESULT(buffer->map());
-			buffer->copyTo(data, size);
-
-			//if not HOST_COHERENT then need to be flushed
-			if ((memoryProperty & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0)
-				buffer->flush();
-			buffer->unmap();
-		}
-
-		buffer->setupDescriptor();
-		MX_VK_CHECK_RESULT(buffer->bind());
-		return buffer;
-	}
-
-	//MxVulkanDebug * MxVulkanManager::createVulkanDebug() const
+	//MxVkDebug * MxVkManager::createVulkanDebug() const
 	//{
-	//	MxVulkanDebug* temp = nullptr;
+	//	MxVkDebug* temp = nullptr;
 	//	try
 	//	{
-	//		temp = new MxVulkanDebug;
+	//		temp = new MxVkDebug;
 	//	}
 	//	catch (const std::exception& e)
 	//	{
