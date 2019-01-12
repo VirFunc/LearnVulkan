@@ -1,9 +1,14 @@
 #include"MxVulkan.h"
 #include"MxWindow.h"
 
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include<glm/glm.hpp>
+#include<glm/gtc/matrix_transform.hpp>
 #include<array>
 #include<vector>
+
+#define MAX_FRAMES_IN_FLIGHT 2
 
 struct Vertex
 {
@@ -40,10 +45,12 @@ struct Vertex
 
 const std::vector<Vertex> vertices =
 {
-	{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-	{{ 0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-	{{ 0.5f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-	{{-0.5f,  0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}}
+	{{ 0.0f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+	{{ 0.0f, 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+	{{ 0.0f, 0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}},
+	{{ 0.0f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+	{{ 0.0f, 0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}},
+	{{ 0.0f, -0.5f,  0.5f}, {1.0f, 1.0f, 1.0f}}
 };
 
 struct UniformBufferObj
@@ -64,12 +71,10 @@ private:
 	Mixel::MxVkRenderPass* mRenderPass;
 	Mixel::MxVkDescriptorSetLayout* mDescriptorSetLayout;
 	Mixel::MxVkDescriptorPool* mDescriptorPool;
-	std::vector<VkDescriptorSet> mDescriptorSets;
 	Mixel::MxVkPipeline* mPipeline;
 	Mixel::MxVkCommandPool* mCommandPool;
-	std::vector<Mixel::MxVkCommandPool::CommandBufferIterator> mCommandBuffers;
-	std::vector<Mixel::MxVkBuffer*> mUniformBuffers;
 	std::vector<Mixel::MxVkFramebuffer*> mFramebuffers;
+	Mixel::MxVkSyncObjectPool* mSyncObjectPool;
 
 	VkSampleCountFlagBits mSampleCount;
 	VkViewport mViewport;
@@ -77,11 +82,22 @@ private:
 	Mixel::MxVkImage* mDepthImage;
 
 	Mixel::MxVkBuffer* mVertexBuffer;
+	std::vector<Mixel::MxVkBuffer*> mUniformBuffers;
+	std::vector<VkDescriptorSet> mDescriptorSets;
+	std::vector<VkCommandBuffer> mCommandBuffers;
+	std::vector<VkSemaphore> mImageAvailableSemaphores;
+	std::vector<VkSemaphore> mRenderFinishedSemaphores;
+	std::vector<VkFence> mInFlightFences;
+
+	size_t mCurrFrame;
+
+	void draw();
+	void updateUniformBuffer(const uint32_t imageIndex);
 public:
 	TestDemo();
 	~TestDemo() = default;
 	bool init();
-	void run() {};
+	void run();
 	void destroy();
 };
 
@@ -92,12 +108,117 @@ int main()
 		std::cerr << "Error : Failed to initialize SDL2!" << std::endl;
 		return -1;
 	}
-
 	TestDemo demo;
 	demo.init();
 	demo.run();
 	demo.destroy();
 	return 0;
+}
+
+void TestDemo::run()
+{
+	bool quit = false;
+	SDL_Event event;
+	while (!quit)
+	{
+		while (SDL_PollEvent(&event))
+		{
+			if (event.type == SDL_QUIT)
+			{
+				quit = true;
+				break;
+			}
+
+			switch (event.type)
+			{
+			case SDL_WINDOWEVENT:
+				switch (event.window.event)
+				{
+				default:
+					break;
+				}
+				break;
+			default:
+				break;
+			}
+		}
+		draw();
+	}
+}
+
+void TestDemo::draw()
+{
+	vkWaitForFences(mManager->getDevice(), 1, &mInFlightFences[mCurrFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
+
+	uint32_t imageIndex;
+	VkResult result = vkAcquireNextImageKHR(mManager->getDevice(), mSwapchain->getSwapchain(), std::numeric_limits<uint64_t>::max(),
+											mImageAvailableSemaphores[mCurrFrame], VK_NULL_HANDLE, &imageIndex);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+	{
+		std::cerr << "VK_ERROR_OUT_OF_DATE_KHR" << std::endl;
+		return;
+	} else
+		MX_VK_CHECK_RESULT(result);
+
+	updateUniformBuffer(imageIndex);
+
+	//submit command buffer
+	VkSemaphore waitSemaphores[] = { mImageAvailableSemaphores[mCurrFrame] };
+	VkSemaphore signalSemaphores[] = { mRenderFinishedSemaphores[mCurrFrame] };
+	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.pWaitSemaphores = waitSemaphores;
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitDstStageMask = waitStages;
+	submitInfo.pSignalSemaphores = signalSemaphores;
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pCommandBuffers = &mCommandBuffers[imageIndex];
+	submitInfo.commandBufferCount = 1;
+
+	MX_VK_CHECK_RESULT(vkResetFences(mManager->getDevice(), 1, &mInFlightFences[mCurrFrame]));
+
+	MX_VK_CHECK_RESULT(vkQueueSubmit(mManager->getQueue().graphics, 1, &submitInfo, mInFlightFences[mCurrFrame]));
+
+	//swapchain present
+	VkSwapchainKHR swapChains[] = { mSwapchain->getSwapchain() };
+
+	VkPresentInfoKHR presentInfo = {};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	presentInfo.pWaitSemaphores = signalSemaphores;
+	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.pSwapchains = swapChains;
+	presentInfo.swapchainCount = 1;
+	presentInfo.pImageIndices = &imageIndex;
+	presentInfo.pResults = nullptr;
+
+	result = vkQueuePresentKHR(mManager->getQueue().present, &presentInfo);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+	{
+		std::cerr << "VK_ERROR_OUT_OF_DATE_KHR" << std::endl;
+		return;
+	} else
+		MX_VK_CHECK_RESULT(result);
+
+	mCurrFrame = (mCurrFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+}
+
+void TestDemo::updateUniformBuffer(const uint32_t imageIndex)
+{
+	UniformBufferObj ubo = {};
+	ubo.model = glm::mat4(1.0f);
+	ubo.view = glm::lookAt(glm::vec3(2.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.proj = glm::perspective(glm::radians(45.0f),
+								mSwapchain->getCurrExtent().width / float(mSwapchain->getCurrExtent().height),
+								0.1f, 10.0f);
+	ubo.proj[1][1] *= -1;
+
+	mUniformBuffers[imageIndex]->map();
+	mUniformBuffers[imageIndex]->copyTo(&ubo, sizeof(ubo));
+	mUniformBuffers[imageIndex]->unmap();
 }
 
 TestDemo::TestDemo()
@@ -111,8 +232,11 @@ TestDemo::TestDemo()
 	mDescriptorPool = new Mixel::MxVkDescriptorPool;
 	mDescriptorSetLayout = new Mixel::MxVkDescriptorSetLayout;
 	mPipeline = new Mixel::MxVkPipeline;
+	mCommandPool = new Mixel::MxVkCommandPool;
+	mSyncObjectPool = new Mixel::MxVkSyncObjectPool;
 
 	mSampleCount = VK_SAMPLE_COUNT_1_BIT;
+	mCurrFrame = 0;
 }
 
 bool TestDemo::init()
@@ -162,7 +286,7 @@ bool TestDemo::init()
 														 VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 		auto presentAttachRef = mRenderPass->addColorAttachRef(presentAttach);
 
-		auto depthAttach = mRenderPass->addDepthStencilAttach(VK_FORMAT_D32_SFLOAT, mSampleCount);
+		auto depthAttach = mRenderPass->addDepthStencilAttach(VK_FORMAT_D24_UNORM_S8_UINT, mSampleCount);
 		auto depthAttachRef = mRenderPass->addDepthStencilAttachRef(depthAttach);
 
 		auto subpass = mRenderPass->addSubpass();
@@ -241,21 +365,27 @@ bool TestDemo::init()
 
 		//create depth stencil buffer
 		mDepthImage = Mixel::MxVkImage::createDepthStencil(mManager, VK_FORMAT_D24_UNORM_S8_UINT,
-															   mSwapchain->getCurrExtent(),
-															   mSampleCount);
+														   mSwapchain->getCurrExtent(),
+														   mSampleCount);
+
+		//create command pool
+		mCommandPool->setup(mManager);
+		mCommandPool->createCommandPool(VK_QUEUE_GRAPHICS_BIT);
 
 		//setup framebuffer
 		std::vector<VkImageView> attachments;
 		mFramebuffers.resize(mSwapchain->getImageCount());
 		for (uint32_t i = 0; i < mFramebuffers.size(); ++i)
 		{
+			attachments = { mSwapchain->getImageViews()[i],mDepthImage->view };
+
 			mFramebuffers[i] = new Mixel::MxVkFramebuffer;
 			mFramebuffers[i]->setup(mManager);
 			mFramebuffers[i]->setExtent({ static_cast<uint32_t>(rect.width),static_cast<uint32_t>(rect.height) });
 			mFramebuffers[i]->setLayers(1);
-
-			attachments = { mSwapchain->getImageViews()[i],mDepthImage->view };
+			mFramebuffers[i]->setTargetRenderPass(mRenderPass->getRenderPass());
 			mFramebuffers[i]->addAttachments(attachments);
+			mFramebuffers[i]->createFramebuffer();
 		}
 
 		//create vertex buffer
@@ -263,7 +393,7 @@ bool TestDemo::init()
 			VkDeviceSize bufferSize = sizeof(Vertex) * vertices.size();
 			//temporary buffer
 			mVertexBuffer = Mixel::MxVkBuffer::createBuffer(mManager, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-																VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, bufferSize);
+															VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, bufferSize);
 			Mixel::MxVkBuffer::copyToDeviceBuffer(mManager, mCommandPool, mVertexBuffer, vertices.data());
 		}
 
@@ -273,62 +403,87 @@ bool TestDemo::init()
 			for (size_t i = 0; i < mSwapchain->getImageCount(); ++i)
 			{
 				mUniformBuffers[i] = Mixel::MxVkBuffer::createBuffer(mManager, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-																		 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-																		 sizeof(UniformBufferObj));
+																	 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+																	 sizeof(UniformBufferObj));
 			}
 		}
 
 		//create descriptor pool
+		mDescriptorPool->setup(mManager);
 		mDescriptorPool->addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, mSwapchain->getImageCount());
 		mDescriptorPool->createDescriptorPool(mSwapchain->getImageCount());
 
 		//allocate descriptor sets
 		mDescriptorSets = mDescriptorPool->allocDescriptorSet(*mDescriptorSetLayout, mSwapchain->getImageCount());
 
+		//update descriptor sets
+		for (size_t i = 0; i < mSwapchain->getImageCount(); ++i)
+		{
+			std::array<VkWriteDescriptorSet, 1> descriptorWrites = {};
+			descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrites[0].dstSet = mDescriptorSets[i]; //将要修改的描述符
+			descriptorWrites[0].dstBinding = 0; //与shader的binding对应
+			descriptorWrites[0].dstArrayElement = 0;
+			descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; //要修改的修饰符的类型
+			descriptorWrites[0].descriptorCount = 1; //描述符的数量
+			descriptorWrites[0].pBufferInfo = &mUniformBuffers[i]->descriptor; //描述符引用的buffer的信息
+			descriptorWrites[0].pImageInfo = nullptr; //描述符引用image的信息（此处没有用到）
+			descriptorWrites[0].pTexelBufferView = nullptr;
+
+			vkUpdateDescriptorSets(mManager->getDevice(), descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+		}
+
 		//create commandbuffer
 		{
-			auto its = mCommandPool->allocCommandBuffers(VK_COMMAND_BUFFER_LEVEL_PRIMARY, mSwapchain->getImageCount());
-			mCommandBuffers.assign(its.first, its.second);
+			mCommandBuffers = mCommandPool->allocCommandBuffers(VK_COMMAND_BUFFER_LEVEL_PRIMARY, mSwapchain->getImageCount());
 
 			for (size_t i = 0; i < mCommandBuffers.size(); ++i)
 			{
 				//begin command buffer
-				mCommandPool->beginCommandBuffer(mCommandBuffers[i]);
+				Mixel::beginCommandBuffer(mCommandBuffers[i]);
 
 				std::vector<VkClearValue> clearValues(2);
 				clearValues[0].color = { 0.0f,0.0f,0.0f,1.0f };
 				clearValues[1].depthStencil = { 1.0f,0 };
 
 				//begin render pass
-				mRenderPass->beginRenderPass(*mCommandBuffers[i], mFramebuffers[i]->getFramebuffer(), clearValues,
+				mRenderPass->beginRenderPass(mCommandBuffers[i], mFramebuffers[i]->getFramebuffer(), clearValues,
 											 mSwapchain->getCurrExtent());
 
 				//bind pipeline
-				vkCmdBindPipeline(*mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline->getPipeline());
+				vkCmdBindPipeline(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline->getPipeline());
 
 				//bind vertex buffer
 				VkBuffer vertexBuffers[] = { mVertexBuffer->buffer };
 				VkDeviceSize offsets[] = { 0 };
-				vkCmdBindVertexBuffers(*mCommandBuffers[i], 0, 1, vertexBuffers, offsets);
+				vkCmdBindVertexBuffers(mCommandBuffers[i], 0, 1, vertexBuffers, offsets);
 
 				//bind descriptor sets
-				vkCmdBindDescriptorSets(*mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline->getPipelineLayout(),
+				vkCmdBindDescriptorSets(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline->getPipelineLayout(),
 										0, //第一个描述符集合的索引 
 										1, //描述符的数量
 										&mDescriptorSets[i], //描述符数组
 										0, nullptr);
 
 				//draw
-				vkCmdDraw(*mCommandBuffers[i], vertices.size(), 1, 0, 0);
+				vkCmdDraw(mCommandBuffers[i], vertices.size(), 1, 0, 0);
 
 				//end render pass
-				mRenderPass->endRenderPass(*mCommandBuffers[i]);
+				mRenderPass->endRenderPass(mCommandBuffers[i]);
 
 				//end command buffer
-				mCommandPool->endCommandBuffer(mCommandBuffers[i]);
+				Mixel::endCommandBuffer(mCommandBuffers[i]);
 			}
 		}
 
+		//create fence and semaphore
+		mSyncObjectPool->setup(mManager);
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+		{
+			mImageAvailableSemaphores.push_back(mSyncObjectPool->createSemaphore());
+			mRenderFinishedSemaphores.push_back(mSyncObjectPool->createSemaphore());
+			mInFlightFences.push_back(mSyncObjectPool->createFence());
+		}
 	}
 
 	catch (const std::exception& e)
@@ -341,6 +496,15 @@ bool TestDemo::init()
 
 void TestDemo::destroy()
 {
+	vkDeviceWaitIdle(mManager->getDevice());
+
+	MX_FREE_OBJECT(mSyncObjectPool);
+	MX_FREE_OBJECT(mCommandPool);
+
+	vkDestroyImageView(mManager->getDevice(), mDepthImage->view, nullptr);
+	vkDestroyImage(mManager->getDevice(), mDepthImage->image, nullptr);
+	vkFreeMemory(mManager->getDevice(), mDepthImage->memory, nullptr);
+
 	for (auto& framebuffer : mFramebuffers)
 		MX_FREE_OBJECT(framebuffer);
 
@@ -352,9 +516,9 @@ void TestDemo::destroy()
 	MX_FREE_OBJECT(mRenderPass);
 	MX_FREE_OBJECT(mDebug);
 
-	vkDestroyImageView(mManager->getDevice(), mDepthImage->view, nullptr);
-	vkDestroyImage(mManager->getDevice(), mDepthImage->image, nullptr);
-	vkFreeMemory(mManager->getDevice(), mDepthImage->memory, nullptr);
+	MX_FREE_OBJECT(mVertexBuffer);
+	for (auto& buffer : mUniformBuffers)
+		MX_FREE_OBJECT(buffer);
 
 	MX_FREE_OBJECT(mManager);
 	MX_FREE_OBJECT(mWindow);

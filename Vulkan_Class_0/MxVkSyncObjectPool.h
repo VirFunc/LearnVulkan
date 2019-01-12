@@ -11,9 +11,15 @@ namespace Mixel
 	class MxVkSyncObjectPool :public MxVkComponent
 	{
 	private:
-
+		std::vector<VkFence> mFences;
+		std::vector<VkSemaphore> mSemaphores;
 	public:
 		MxVkSyncObjectPool();
+		VkFence createFence(const VkFenceCreateFlags flags = VK_FENCE_CREATE_SIGNALED_BIT);
+		void destroyFence(const VkFence fence);
+		VkSemaphore createSemaphore();
+		void destroySemaphore(const VkSemaphore semaphore);
+		void destroy();
 		~MxVkSyncObjectPool();
 	};
 }

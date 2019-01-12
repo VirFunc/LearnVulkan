@@ -35,10 +35,10 @@ namespace Mixel
 //check the result returned by vkxxx
 #define MX_VK_CHECK_RESULT(r)										\
 {																	\
-	VkResult result=(r);											\
-	if(result != VK_SUCCESS)										\
+	VkResult __result=(r);											\
+	if(__result != VK_SUCCESS)										\
 	{																\
-		throw std::runtime_error("Error : "+Mixel::mxErrorString(result)+" at "+__FILE__+" : "+std::to_string(__LINE__));  				\
+		throw std::runtime_error("Error : "+Mixel::mxErrorString(__result)+" at "+__FILE__+" : "+std::to_string(__LINE__));  				\
 	}																\
 }
 

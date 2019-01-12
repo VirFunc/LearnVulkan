@@ -5,7 +5,7 @@ namespace Mixel
 	MxVkBuffer * MxVkBuffer::createBuffer(const MxVkManager* manager, const VkBufferUsageFlags usage,
 												  const VkMemoryPropertyFlags memoryProperty,
 												  const VkDeviceSize size,
-												  const VkSharingMode sharingMode, const void * data = nullptr)
+												  const VkSharingMode sharingMode, const void * data)
 	{
 		MxVkBuffer* buffer = new MxVkBuffer;
 		VkBufferCreateInfo createInfo = {};

@@ -49,7 +49,7 @@ namespace Mixel
 		return true;
 	}
 
-	MxVkCommandPool::CommandBufferRange MxVkCommandPool::allocCommandBuffers(VkCommandBufferLevel level, uint32_t count)
+	std::vector<VkCommandBuffer> MxVkCommandPool::allocCommandBuffers(VkCommandBufferLevel level, uint32_t count)
 	{
 		VkCommandBufferAllocateInfo allocateInfo = {};
 		allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -57,40 +57,37 @@ namespace Mixel
 		allocateInfo.level = level;
 		allocateInfo.commandBufferCount = count;
 
-		std::vector<VkCommandBuffer> buffer(count);
+		std::vector<VkCommandBuffer> buffer;
+		buffer.resize(count);
 		MX_VK_CHECK_RESULT(vkAllocateCommandBuffers(mManager->getDevice(), &allocateInfo, buffer.data()));
-		auto it = mCommandBuffers.cend();
 		mCommandBuffers.insert(mCommandBuffers.end(), buffer.cbegin(), buffer.cend());
-		return { it, mCommandBuffers.cend() };
+		return std::move(buffer);
 	}
 
-	bool MxVkCommandPool::beginCommandBuffer(CommandBufferIterator it, VkCommandBufferUsageFlagBits usage)
+	bool beginCommandBuffer(const VkCommandBuffer commandBuffer, VkCommandBufferUsageFlagBits usage)
 	{
 		VkCommandBufferBeginInfo beginInfo = {};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		beginInfo.flags = usage;
 
-		MX_VK_CHECK_RESULT(vkBeginCommandBuffer(*it, &beginInfo));
+		MX_VK_CHECK_RESULT(vkBeginCommandBuffer(commandBuffer, &beginInfo));
 		return true;
 	}
 
-	bool MxVkCommandPool::endCommandBuffer(CommandBufferIterator it)
+	bool endCommandBuffer(const VkCommandBuffer commandBuffer)
 	{
-		MX_VK_CHECK_RESULT(vkEndCommandBuffer(*it));
+		MX_VK_CHECK_RESULT(vkEndCommandBuffer(commandBuffer));
 		return true;
 	}
 
-	void MxVkCommandPool::freeCommandBuffers(const std::initializer_list<CommandBufferIterator>& its)
+	void MxVkCommandPool::freeCommandBuffers(const std::vector<VkCommandBuffer>& commandBuffers)
 	{
-		std::vector<VkCommandBuffer> buffers;
-		buffers.reserve(its.size());
-		auto it = its.begin();
-		for (auto& buffer : buffers)
+		for (const auto& buffer : commandBuffers)
 		{
-			buffer = **it;
-			mCommandBuffers.erase(*it);
+			if (std::find(mCommandBuffers.cbegin(), mCommandBuffers.cend(), buffer) == mCommandBuffers.cend())
+				throw std::runtime_error("Error : Member of [ commandBuffers ] not included in this command pool");
 		}
-		vkFreeCommandBuffers(mManager->getDevice(), mCommandPool, buffers.size(), buffers.data());
+		vkFreeCommandBuffers(mManager->getDevice(), mCommandPool, commandBuffers.size(), commandBuffers.data());
 	}
 
 	VkCommandBuffer MxVkCommandPool::beginTempCommandBuffer()

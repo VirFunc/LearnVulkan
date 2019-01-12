@@ -45,6 +45,7 @@ namespace Mixel
 		bool createSwapchain(const std::vector<VkSurfaceFormatKHR>& rqFormats,
 							 VkPresentModeKHR rqPresentMode,
 							 VkExtent2D rqExtent);
+		VkSwapchainKHR getSwapchain()const { return mSwapchain; };
 		const VkSurfaceFormatKHR& getCurrFormat() const { return mCurrFormat; };
 		VkPresentModeKHR getCurrPresentMode() const { return mCurrPresentMode; };
 		const VkExtent2D& getCurrExtent() const { return mCurrExtent; };

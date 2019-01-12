@@ -17,6 +17,7 @@
 #include"MxVkSwapchain.h"
 #include"MxVkShader.hpp"
 #include"MxVkBuffer.h"
+#include"MxVkSyncObjectPool.h"
 #include"MxVkUtils.h"
 
 #endif // !_MX_VULKAN_H_
