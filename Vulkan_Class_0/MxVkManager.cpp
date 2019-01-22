@@ -1,6 +1,6 @@
 #include "MxVkManager.h"
 
-namespace Mixel
+namespace Mix
 {
 	void MxVkManager::createInstance(const InitializeInfo & info)
 	{

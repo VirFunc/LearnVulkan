@@ -1,6 +1,6 @@
 #include "MxVkUtils.h"
 
-namespace Mixel
+namespace Mix
 {
 	std::string mxErrorString(const VkResult res)
 	{

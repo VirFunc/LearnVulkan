@@ -1,8 +1,8 @@
 #include "MxVkSwapchain.h"
 
-namespace Mixel
+namespace Mix
 {
-	MxVkSwapchain::MxVkSwapchain() :mIsReady(false), mManager(nullptr)
+	MxVkSwapchain::MxVkSwapchain()
 	{
 	}
 

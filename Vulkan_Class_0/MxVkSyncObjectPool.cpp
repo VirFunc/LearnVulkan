@@ -1,6 +1,6 @@
 #include "MxVkSyncObjectPool.h"
 
-namespace Mixel
+namespace Mix
 {
 	MxVkSyncObjectPool::MxVkSyncObjectPool()
 	{

@@ -63,26 +63,26 @@ struct UniformBufferObj
 class TestDemo
 {
 private:
-	Mixel::MxWindow* mWindow;
-	Mixel::MxVkManager* mManager;
-	Mixel::MxVkDebug* mDebug;
-	Mixel::MxVkShaderHelper* mShaderHelper;
-	Mixel::MxVkSwapchain* mSwapchain;
-	Mixel::MxVkRenderPass* mRenderPass;
-	Mixel::MxVkDescriptorSetLayout* mDescriptorSetLayout;
-	Mixel::MxVkDescriptorPool* mDescriptorPool;
-	Mixel::MxVkPipeline* mPipeline;
-	Mixel::MxVkCommandPool* mCommandPool;
-	std::vector<Mixel::MxVkFramebuffer*> mFramebuffers;
-	Mixel::MxVkSyncObjectPool* mSyncObjectPool;
+	Mix::MxWindow* mWindow;
+	Mix::MxVkManager* mManager;
+	Mix::MxVkDebug* mDebug;
+	Mix::MxVkShaderHelper* mShaderHelper;
+	Mix::MxVkSwapchain* mSwapchain;
+	Mix::MxVkRenderPass* mRenderPass;
+	Mix::MxVkDescriptorSetLayout* mDescriptorSetLayout;
+	Mix::MxVkDescriptorPool* mDescriptorPool;
+	Mix::MxVkPipeline* mPipeline;
+	Mix::MxVkCommandPool* mCommandPool;
+	std::vector<Mix::MxVkFramebuffer*> mFramebuffers;
+	Mix::MxVkSyncObjectPool* mSyncObjectPool;
 
 	VkSampleCountFlagBits mSampleCount;
 	VkViewport mViewport;
 	VkRect2D mScissor;
-	Mixel::MxVkImage* mDepthImage;
+	Mix::MxVkImage* mDepthImage;
 
-	Mixel::MxVkBuffer* mVertexBuffer;
-	std::vector<Mixel::MxVkBuffer*> mUniformBuffers;
+	Mix::MxVkBuffer* mVertexBuffer;
+	std::vector<Mix::MxVkBuffer*> mUniformBuffers;
 	std::vector<VkDescriptorSet> mDescriptorSets;
 	std::vector<VkCommandBuffer> mCommandBuffers;
 	std::vector<VkSemaphore> mImageAvailableSemaphores;
@@ -223,17 +223,17 @@ void TestDemo::updateUniformBuffer(const uint32_t imageIndex)
 
 TestDemo::TestDemo()
 {
-	mWindow = new Mixel::MxWindow;
-	mManager = new Mixel::MxVkManager;
-	mDebug = new Mixel::MxVkDebug;
-	mShaderHelper = new Mixel::MxVkShaderHelper;
-	mSwapchain = new Mixel::MxVkSwapchain;
-	mRenderPass = new Mixel::MxVkRenderPass;
-	mDescriptorPool = new Mixel::MxVkDescriptorPool;
-	mDescriptorSetLayout = new Mixel::MxVkDescriptorSetLayout;
-	mPipeline = new Mixel::MxVkPipeline;
-	mCommandPool = new Mixel::MxVkCommandPool;
-	mSyncObjectPool = new Mixel::MxVkSyncObjectPool;
+	mWindow = new Mix::MxWindow;
+	mManager = new Mix::MxVkManager;
+	mDebug = new Mix::MxVkDebug;
+	mShaderHelper = new Mix::MxVkShaderHelper;
+	mSwapchain = new Mix::MxVkSwapchain;
+	mRenderPass = new Mix::MxVkRenderPass;
+	mDescriptorPool = new Mix::MxVkDescriptorPool;
+	mDescriptorSetLayout = new Mix::MxVkDescriptorSetLayout;
+	mPipeline = new Mix::MxVkPipeline;
+	mCommandPool = new Mix::MxVkCommandPool;
+	mSyncObjectPool = new Mix::MxVkSyncObjectPool;
 
 	mSampleCount = VK_SAMPLE_COUNT_1_BIT;
 	mCurrFrame = 0;
@@ -251,7 +251,7 @@ bool TestDemo::init()
 	info->instance.validationLayers.push_back("VK_LAYER_LUNARG_standard_validation");
 	info->instance.appInfo.appName = mWindow->getTitle();
 	info->instance.appInfo.appVersion = VK_MAKE_VERSION(0, 0, 1);
-	info->instance.appInfo.engineName = "Mixel";
+	info->instance.appInfo.engineName = "Mix";
 	info->instance.appInfo.engineVersion = VK_MAKE_VERSION(0, 0, 1);
 
 	info->device.physical.type = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
@@ -270,7 +270,7 @@ bool TestDemo::init()
 		mShaderHelper->setup(mManager);
 
 		//setup debug
-		mDebug->setDefaultCallback(Mixel::MxVkDebug::SEVERITY_ALL, Mixel::MxVkDebug::TYPE_ALL);
+		mDebug->setDefaultCallback(Mix::MxVkDebug::SEVERITY_ALL, Mix::MxVkDebug::TYPE_ALL);
 
 		//setup swapchain
 		auto rect = mWindow->getWindowRect();
@@ -364,7 +364,7 @@ bool TestDemo::init()
 		mPipeline->createPipeline();
 
 		//create depth stencil buffer
-		mDepthImage = Mixel::MxVkImage::createDepthStencil(mManager, VK_FORMAT_D24_UNORM_S8_UINT,
+		mDepthImage = Mix::MxVkImage::createDepthStencil(mManager, VK_FORMAT_D24_UNORM_S8_UINT,
 														   mSwapchain->getCurrExtent(),
 														   mSampleCount);
 
@@ -379,7 +379,7 @@ bool TestDemo::init()
 		{
 			attachments = { mSwapchain->getImageViews()[i],mDepthImage->view };
 
-			mFramebuffers[i] = new Mixel::MxVkFramebuffer;
+			mFramebuffers[i] = new Mix::MxVkFramebuffer;
 			mFramebuffers[i]->setup(mManager);
 			mFramebuffers[i]->setExtent({ static_cast<uint32_t>(rect.width),static_cast<uint32_t>(rect.height) });
 			mFramebuffers[i]->setLayers(1);
@@ -392,9 +392,9 @@ bool TestDemo::init()
 		{
 			VkDeviceSize bufferSize = sizeof(Vertex) * vertices.size();
 			//temporary buffer
-			mVertexBuffer = Mixel::MxVkBuffer::createBuffer(mManager, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+			mVertexBuffer = Mix::MxVkBuffer::createBuffer(mManager, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 															VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, bufferSize);
-			Mixel::MxVkBuffer::copyToDeviceBuffer(mManager, mCommandPool, mVertexBuffer, vertices.data());
+			Mix::MxVkBuffer::copyToDeviceBuffer(mManager, mCommandPool, mVertexBuffer, vertices.data());
 		}
 
 		//create uniform buffer
@@ -402,7 +402,7 @@ bool TestDemo::init()
 			mUniformBuffers.resize(mSwapchain->getImageCount());
 			for (size_t i = 0; i < mSwapchain->getImageCount(); ++i)
 			{
-				mUniformBuffers[i] = Mixel::MxVkBuffer::createBuffer(mManager, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+				mUniformBuffers[i] = Mix::MxVkBuffer::createBuffer(mManager, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 																	 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 																	 sizeof(UniformBufferObj));
 			}
@@ -440,7 +440,7 @@ bool TestDemo::init()
 			for (size_t i = 0; i < mCommandBuffers.size(); ++i)
 			{
 				//begin command buffer
-				Mixel::beginCommandBuffer(mCommandBuffers[i]);
+				Mix::beginCommandBuffer(mCommandBuffers[i]);
 
 				std::vector<VkClearValue> clearValues(2);
 				clearValues[0].color = { 0.0f,0.0f,0.0f,1.0f };
@@ -472,7 +472,7 @@ bool TestDemo::init()
 				mRenderPass->endRenderPass(mCommandBuffers[i]);
 
 				//end command buffer
-				Mixel::endCommandBuffer(mCommandBuffers[i]);
+				Mix::endCommandBuffer(mCommandBuffers[i]);
 			}
 		}
 

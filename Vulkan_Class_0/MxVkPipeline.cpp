@@ -1,9 +1,10 @@
 #include "MxVkPipeline.h"
 
-namespace Mixel
+namespace Mix
 {
-	MxVkPipeline::MxVkPipeline() :mIsReady(false), mManager(nullptr),
-		mPipeline(VK_NULL_HANDLE), mPipelineLayout(VK_NULL_HANDLE), mPipelineStates(nullptr)
+	MxVkPipeline::MxVkPipeline() :mPipeline(VK_NULL_HANDLE),
+		mPipelineLayout(VK_NULL_HANDLE),
+		mPipelineStates(nullptr)
 	{
 	}
 

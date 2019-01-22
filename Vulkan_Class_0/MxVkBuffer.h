@@ -7,7 +7,7 @@
 
 #include<cassert>
 
-namespace Mixel
+namespace Mix
 {
 	struct MxVkBuffer
 	{

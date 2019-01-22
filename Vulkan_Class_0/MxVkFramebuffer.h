@@ -2,18 +2,15 @@
 #ifndef _MX_VK_FRAMEBUFFER_H_
 #define _MX_VK_FRAMEBUFFER_H_
 
-#include"MxVkManager.h"
+#include"MxVkComponent.h"
 
 #include<vector>
 
-namespace Mixel
+namespace Mix
 {
-	class MxVkFramebuffer
+	class MxVkFramebuffer:public MxVkComponent
 	{
 	private:
-		bool mIsReady;
-
-		const MxVkManager* mManager;
 		VkFramebuffer mFramebuffer;
 		VkRenderPass mRenderPass;
 		VkExtent2D mExtent;

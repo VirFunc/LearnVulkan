@@ -4,7 +4,7 @@
 
 #include"MxVkManager.h"
 
-namespace Mixel
+namespace Mix
 {
 	class MxVkComponent
 	{
@@ -13,7 +13,7 @@ namespace Mixel
 		const MxVkManager* mManager;
 	public:
 		MxVkComponent();
-		virtual void setup(const MxVkManager* manager);
+		virtual bool setup(const MxVkManager* manager);
 		virtual void destroy();
 		virtual ~MxVkComponent();
 	};

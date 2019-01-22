@@ -1,7 +1,7 @@
 #include "MxVkCommandPool.h"
-namespace Mixel
+namespace Mix
 {
-	MxVkCommandPool::MxVkCommandPool() :mIsReady(false), mManager(nullptr), mCommandPool(VK_NULL_HANDLE)
+	MxVkCommandPool::MxVkCommandPool() :mCommandPool(VK_NULL_HANDLE)
 	{
 	}
 
@@ -14,16 +14,6 @@ namespace Mixel
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
 		VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr
 	};
-
-	bool MxVkCommandPool::setup(const MxVkManager * manager)
-	{
-		if (mIsReady)
-			destroy();
-
-		mManager = manager;
-		mIsReady = true;
-		return true;
-	}
 
 	bool MxVkCommandPool::createCommandPool(VkQueueFlagBits queueType)
 	{

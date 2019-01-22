@@ -3,20 +3,17 @@
 #define _MX_VK_DEBUG_H_
 #define MX_DEBUG _DEBUG
 
-#include"MxVkManager.h"
+#include"MxVkComponent.h"
 
 #include<iostream>
 #include<string>
 #include<vector>
 
-namespace Mixel
+namespace Mix
 {
-	class MxVkDebug
+	class MxVkDebug:public MxVkComponent
 	{
 	private:
-		bool mIsReady;
-
-		const MxVkManager* mManager;
 		std::vector<VkDebugUtilsMessengerEXT> mMessengers;
 		PFN_vkCreateDebugUtilsMessengerEXT mCreateDebugUtilsMessenger;
 		PFN_vkDestroyDebugUtilsMessengerEXT mDestroyDebugUtilsMessenger;

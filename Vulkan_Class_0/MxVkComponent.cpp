@@ -1,17 +1,18 @@
 #include "MxVkComponent.h"
 
-namespace Mixel
+namespace Mix
 {
-	MxVkComponent::MxVkComponent()
+	MxVkComponent::MxVkComponent() :mIsReady(false), mManager(nullptr)
 	{
 	}
 
-	void MxVkComponent::setup(const MxVkManager * manager)
+	bool MxVkComponent::setup(const MxVkManager * manager)
 	{
 		if (mIsReady)
 			destroy();
 		mManager = manager;
-		mIsReady = mIsReady;
+		mIsReady = true;
+		return true;
 	}
 
 	void MxVkComponent::destroy()

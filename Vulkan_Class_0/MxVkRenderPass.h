@@ -2,18 +2,15 @@
 #ifndef _MX_VK_RENDER_PASS_H_
 #define _MX_VK_RENDER_PASS_H_
 
-#include"MxVkManager.h"
+#include"MxVkComponent.h"
 
 #include<vector>
 
-namespace Mixel
+namespace Mix
 {
-	class MxVkRenderPass
+	class MxVkRenderPass:public MxVkComponent
 	{
 	private:
-		bool mIsReady;
-
-		const MxVkManager* mManager;
 		VkRenderPass mRenderPass;
 
 		struct SubpassContent

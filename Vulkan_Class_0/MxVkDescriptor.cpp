@@ -1,20 +1,9 @@
 #include "MxVkDescriptor.h"
 
-namespace Mixel
+namespace Mix
 {
-	MxVkDescriptorPool::MxVkDescriptorPool() :mIsReady(false), mManager(nullptr),
-		mDescriptorPool(VK_NULL_HANDLE)
+	MxVkDescriptorPool::MxVkDescriptorPool() :mDescriptorPool(VK_NULL_HANDLE)
 	{
-	}
-
-	bool MxVkDescriptorPool::setup(const MxVkManager * manager)
-	{
-		if (mIsReady)
-			destroy();
-
-		mManager = manager;
-		mIsReady = true;
-		return true;
 	}
 
 	void MxVkDescriptorPool::addPoolSize(VkDescriptorType type, uint32_t count)
@@ -111,19 +100,10 @@ namespace Mixel
 		mIsReady = false;
 	}
 
-	MxVkDescriptorSetLayout::MxVkDescriptorSetLayout() :mIsReady(false), mManager(nullptr), mLayout(VK_NULL_HANDLE)
+	MxVkDescriptorSetLayout::MxVkDescriptorSetLayout() :mLayout(VK_NULL_HANDLE)
 	{
 	}
 
-	bool MxVkDescriptorSetLayout::setup(const MxVkManager * manager)
-	{
-		if (mIsReady)
-			destroy();
-
-		mManager = manager;
-		mIsReady = true;
-		return true;
-	}
 
 	void MxVkDescriptorSetLayout::addBindings(uint32_t binding, VkDescriptorType type, uint32_t count, VkShaderStageFlags stage, const VkSampler * immutableSamplers)
 	{

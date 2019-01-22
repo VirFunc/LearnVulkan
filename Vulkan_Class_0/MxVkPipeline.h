@@ -2,18 +2,15 @@
 #ifndef _MX_VK_PIPELINE_H_
 #define _MX_VK_PIPELINE_H_
 
-#include"MxVkManager.h"
+#include"MxVkComponent.h"
 
 #include<vector>
 
-namespace Mixel
+namespace Mix
 {
-	class MxVkPipeline
+	class MxVkPipeline :public MxVkComponent
 	{
 	private:
-		bool mIsReady;
-
-		const MxVkManager* mManager;
 		VkPipeline mPipeline;
 		VkPipelineLayout mPipelineLayout;
 		VkRenderPass mRenderPass;

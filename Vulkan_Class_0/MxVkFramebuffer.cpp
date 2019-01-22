@@ -1,13 +1,13 @@
 #include "MxVkFramebuffer.h"
 
-namespace Mixel
+namespace Mix
 {
 	void MxVkFramebuffer::clear()
 	{
 		if (mAttachments)
 			delete mAttachments;
 	}
-	MxVkFramebuffer::MxVkFramebuffer() :mIsReady(false), mManager(nullptr), mRenderPass(VK_NULL_HANDLE)
+	MxVkFramebuffer::MxVkFramebuffer() :mRenderPass(VK_NULL_HANDLE)
 	{
 	}
 

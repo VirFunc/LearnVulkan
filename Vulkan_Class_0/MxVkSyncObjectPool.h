@@ -6,7 +6,7 @@
 
 #include<vector>
 
-namespace Mixel
+namespace Mix
 {
 	class MxVkSyncObjectPool :public MxVkComponent
 	{

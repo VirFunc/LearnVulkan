@@ -1,6 +1,6 @@
 #include "MxVkDebug.h"
 
-namespace Mixel
+namespace Mix
 {
 	VKAPI_ATTR VkBool32 VKAPI_CALL MxVkDebug::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT * pCallbackData, void * pUserData)
 	{
@@ -34,14 +34,14 @@ namespace Mixel
 			msg += "Infomation";
 			break;
 		}
-		
+
 		msg = msg + " ]\n\t" + pCallbackData->pMessage;
 		std::cerr << std::endl << msg << std::endl;
 		return VK_FALSE;
 	}
 
-	MxVkDebug::MxVkDebug() :mIsReady(false), mManager(nullptr),
-		mCreateDebugUtilsMessenger(VK_NULL_HANDLE), mDestroyDebugUtilsMessenger(VK_NULL_HANDLE)
+	MxVkDebug::MxVkDebug() :mCreateDebugUtilsMessenger(VK_NULL_HANDLE),
+		mDestroyDebugUtilsMessenger(VK_NULL_HANDLE)
 	{
 	}
 
@@ -53,11 +53,10 @@ namespace Mixel
 		auto creater = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(mManager->getInstance(), "vkCreateDebugUtilsMessengerEXT");
 		auto destroyer = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(mManager->getInstance(), "vkDestroyDebugUtilsMessengerEXT");
 		if (!creater || !destroyer)
-		{ 
+		{
 			mIsReady = false;
-			return false;
-		}
-		else
+			throw std::runtime_error("Error : Failed to setup debug utils");
+		} else
 		{
 			mIsReady = true;
 			mCreateDebugUtilsMessenger = creater;

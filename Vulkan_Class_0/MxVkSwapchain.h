@@ -3,19 +3,16 @@
 #define _MX_VK_SWAPCHAIN_H_
 
 #include"MxVkImage.h"
-#include"MxVkManager.h"
+#include"MxVkComponent.h"
 
 #include<vector>
 #include<algorithm>
 
-namespace Mixel
+namespace Mix
 {
-	class MxVkSwapchain
+	class MxVkSwapchain:MxVkComponent
 	{
 	private:
-		bool mIsReady;
-		const MxVkManager* mManager;
-
 		VkSwapchainKHR mSwapchain;
 		VkSurfaceFormatKHR mCurrFormat;
 		VkPresentModeKHR mCurrPresentMode;

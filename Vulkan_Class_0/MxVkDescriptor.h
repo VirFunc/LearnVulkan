@@ -2,25 +2,22 @@
 #ifndef _MX_VK_DESCRIPTOR_H_
 #define _MX_VK_DESCRIPTOR_H_
 
-#include"MxVkManager.h"
+#include"MxVkComponent.h"
 
 #include<map>
 #include<vector>
 
-namespace Mixel
+namespace Mix
 {
-	class MxVkDescriptorSetLayout
+	class MxVkDescriptorSetLayout :public MxVkComponent
 	{
 	private:
-		bool mIsReady;
-		const MxVkManager* mManager;
 		VkDescriptorSetLayout mLayout;
 		std::vector<VkDescriptorSetLayoutBinding> mBindings;
 
 		void clear() { mBindings.clear(); }
 	public:
 		MxVkDescriptorSetLayout();
-		bool setup(const MxVkManager* manager);
 		void addBindings(uint32_t binding, VkDescriptorType type, uint32_t count,
 						 VkShaderStageFlags stage,
 						 const VkSampler* immutableSamplers = nullptr);
@@ -30,12 +27,9 @@ namespace Mixel
 		~MxVkDescriptorSetLayout() { destroy(); }
 	};
 
-	class MxVkDescriptorPool
+	class MxVkDescriptorPool :public MxVkComponent
 	{
 	private:
-		bool mIsReady;
-
-		const MxVkManager* mManager;
 		VkDescriptorPool mDescriptorPool;
 
 		std::map<VkDescriptorType, uint32_t> mPoolSizes;
@@ -43,7 +37,6 @@ namespace Mixel
 	public:
 		MxVkDescriptorPool();
 
-		bool setup(const MxVkManager* manager);
 		void addPoolSize(VkDescriptorType type, uint32_t count);
 		bool createDescriptorPool(uint32_t maxSets);
 		VkDescriptorPool getDescriptorPool() const { return mDescriptorPool; }

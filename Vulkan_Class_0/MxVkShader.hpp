@@ -2,7 +2,7 @@
 #ifndef _MX_VK_SHADER_H_
 #define _MX_VK_SHADER_H_
 
-#include"MxVkManager.h"
+#include"MxVkComponent.h"
 
 #include<fstream>
 #include<vector>
@@ -10,7 +10,7 @@
 #include<algorithm>
 #include<string>
 
-namespace Mixel
+namespace Mix
 {
 	struct MxVkShaderModule
 	{
@@ -22,19 +22,16 @@ namespace Mixel
 		}
 	};
 
-	class MxVkShaderHelper
+	class MxVkShaderHelper :public MxVkComponent
 	{
 	private:
-		bool mIsReady;
-
-		const MxVkManager* mManager;
 		std::list<MxVkShaderModule> mModules;
 
 	public:
 		using ShaderModuleIterator = std::list<MxVkShaderModule>::const_iterator;
-		MxVkShaderHelper() :mIsReady(false), mManager(nullptr) {};
+		MxVkShaderHelper() {};
 		bool setup(const MxVkManager* manager);
-		ShaderModuleIterator createModule(const std::vector<char>& code,const VkShaderStageFlagBits stage);
+		ShaderModuleIterator createModule(const std::vector<char>& code, const VkShaderStageFlagBits stage);
 		ShaderModuleIterator createModule(const std::string& path, const VkShaderStageFlagBits stage);
 		bool destroyModule(ShaderModuleIterator it);
 		void destroy();
@@ -51,7 +48,7 @@ namespace Mixel
 		return true;
 	}
 
-	MxVkShaderHelper::ShaderModuleIterator MxVkShaderHelper::createModule(const std::vector<char>& code,const VkShaderStageFlagBits stage)
+	MxVkShaderHelper::ShaderModuleIterator MxVkShaderHelper::createModule(const std::vector<char>& code, const VkShaderStageFlagBits stage)
 	{
 		VkShaderModule temp;
 		VkShaderModuleCreateInfo createInfo = {};

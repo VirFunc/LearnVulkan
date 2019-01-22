@@ -15,7 +15,7 @@
 #include<string>
 #include<map>
 
-namespace Mixel
+namespace Mix
 {
 	struct MxVkBuffer;
 

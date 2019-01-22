@@ -1,6 +1,6 @@
 #include"MxVkBuffer.h"
 
-namespace Mixel
+namespace Mix
 {
 	MxVkBuffer * MxVkBuffer::createBuffer(const MxVkManager* manager, const VkBufferUsageFlags usage,
 												  const VkMemoryPropertyFlags memoryProperty,

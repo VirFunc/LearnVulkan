@@ -9,7 +9,7 @@
 
 
 
-namespace Mixel
+namespace Mix
 {
 
 	struct MxVkQueueFamilyIndices
@@ -38,7 +38,7 @@ namespace Mixel
 	VkResult __result=(r);											\
 	if(__result != VK_SUCCESS)										\
 	{																\
-		throw std::runtime_error("Error : "+Mixel::mxErrorString(__result)+" at "+__FILE__+" : "+std::to_string(__LINE__));  				\
+		throw std::runtime_error("Error : "+Mix::mxErrorString(__result)+" at "+__FILE__+" : "+std::to_string(__LINE__));  				\
 	}																\
 }
 

@@ -1,6 +1,6 @@
 #include "MXWindow.h"
 
-namespace Mixel
+namespace Mix
 {
 	MxWindow::MxWindow()
 	{

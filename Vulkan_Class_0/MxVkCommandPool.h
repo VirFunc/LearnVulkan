@@ -2,21 +2,18 @@
 #ifndef _MX_VK_COMMAND_H_
 #define _MX_VK_COMMAND_H_
 
-#include"MxVkManager.h"
+#include"MxVkComponent.h"
 
 #include<vector>
 #include<list>
 #include<initializer_list>
 #include<utility>
 
-namespace Mixel
+namespace Mix
 {
-	class MxVkCommandPool
+	class MxVkCommandPool:public MxVkComponent
 	{
 	private:
-		bool mIsReady;
-
-		const MxVkManager* mManager;
 		VkQueue mQueue;
 
 		VkCommandPool mCommandPool;
@@ -28,7 +25,6 @@ namespace Mixel
 	public:
 
 		MxVkCommandPool();
-		bool setup(const MxVkManager* manager);
 		bool createCommandPool(VkQueueFlagBits queueType);
 		std::vector<VkCommandBuffer> allocCommandBuffers(VkCommandBufferLevel level, uint32_t count);
 		void freeCommandBuffers(const std::vector<VkCommandBuffer>& commandBuffers);

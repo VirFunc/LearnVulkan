@@ -1,6 +1,6 @@
 #include "MxVkImage.h"
 
-namespace Mixel
+namespace Mix
 {
 	VkImage MxVkImage::createImage2D(const MxVkManager * manager, const VkExtent2D extent, const VkFormat format, const VkImageUsageFlags usage, const VkSampleCountFlagBits sampleCount, const VkImageTiling tiling, const VkImageLayout initialLayout, const VkSharingMode sharingMode, const uint32_t mipLevels, const uint32_t arrayLayers)
 	{

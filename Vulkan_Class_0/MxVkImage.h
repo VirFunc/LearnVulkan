@@ -4,7 +4,7 @@
 
 #include"MxVkManager.h"
 
-namespace Mixel
+namespace Mix
 {
 	struct MxVkImage
 	{

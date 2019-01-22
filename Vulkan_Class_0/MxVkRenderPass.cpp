@@ -1,6 +1,6 @@
 #include "MxVkRenderPass.h"
 
-namespace Mixel
+namespace Mix
 {
 	void MxVkRenderPass::clear()
 	{
@@ -15,7 +15,7 @@ namespace Mixel
 		if (mSubpasses)
 			delete mSubpasses;
 	}
-	MxVkRenderPass::MxVkRenderPass() :mIsReady(false), mManager(nullptr), mRenderPass(VK_NULL_HANDLE)
+	MxVkRenderPass::MxVkRenderPass() :mRenderPass(VK_NULL_HANDLE)
 	{
 	}
 
