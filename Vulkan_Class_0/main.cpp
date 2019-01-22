@@ -514,12 +514,12 @@ void TestDemo::destroy()
 	MX_FREE_OBJECT(mDescriptorPool);
 	MX_FREE_OBJECT(mPipeline);
 	MX_FREE_OBJECT(mRenderPass);
-	MX_FREE_OBJECT(mDebug);
 
 	MX_FREE_OBJECT(mVertexBuffer);
 	for (auto& buffer : mUniformBuffers)
 		MX_FREE_OBJECT(buffer);
 
+	MX_FREE_OBJECT(mDebug);
 	MX_FREE_OBJECT(mManager);
 	MX_FREE_OBJECT(mWindow);
 }

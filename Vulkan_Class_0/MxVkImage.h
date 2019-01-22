@@ -37,7 +37,13 @@ namespace Mix
 												  const VkMemoryPropertyFlags properties);
 
 		static MxVkImage* createDepthStencil(const MxVkManager* manager,
-												 const VkFormat format, const VkExtent2D& extent, const VkSampleCountFlagBits sampleCount);
+											 const VkFormat format, const VkExtent2D& extent, const VkSampleCountFlagBits sampleCount);
+	};
+
+	struct MxVkTexture2D :public MxVkImage
+	{
+		VkImageLayout layout;
+		uint32_t mipLevels;
 	};
 }
 #endif // !_MX_VK_IMAGE_H_
