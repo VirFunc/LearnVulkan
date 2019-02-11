@@ -1,57 +1,62 @@
 #include"MxVulkan.h"
+#include"MxCamera.h"
 #include"MxWindow.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
+#include<glm/gtc/quaternion.hpp>
+#include<glm/gtx/quaternion.hpp>
 #include<array>
 #include<vector>
+#include<chrono>
 
 #define MAX_FRAMES_IN_FLIGHT 2
 
-struct Vertex
-{
-	glm::vec3 pos;
-	glm::vec3 color;
+//struct Vertex
+//{
+//	glm::vec3 pos;
+//	glm::vec3 color;
+//
+//	//返回Vertex对于的顶点绑定(VertexInputBinding)描述
+//	static VkVertexInputBindingDescription getBindingDescription()
+//	{
+//		VkVertexInputBindingDescription bindingDescription = {};
+//		bindingDescription.binding = 0; //顶点数据的绑定点
+//		bindingDescription.stride = sizeof(Vertex); //两个Vertex之间的间隔
+//		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+//		return bindingDescription;
+//	}
+//
+//	//返回顶点数据中每个 属性的描述 
+//	static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescription()
+//	{
+//		std::array<VkVertexInputAttributeDescription, 2> attributeDescription = {};
+//		attributeDescription[0].binding = 0; //顶点数据的绑定点
+//		attributeDescription[0].location = 0; //在vertex shader中的location
+//		attributeDescription[0].format = VK_FORMAT_R32G32B32_SFLOAT; //属性的数据格式
+//		attributeDescription[0].offset = offsetof(Vertex, pos); //属性相对于一个Vertex起始位置的便宜量
+//
+//		attributeDescription[1].binding = 0;
+//		attributeDescription[1].location = 1;
+//		attributeDescription[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+//		attributeDescription[1].offset = offsetof(Vertex, color);
+//
+//		return attributeDescription;
+//	}
+//};
 
-	//返回Vertex对于的顶点绑定(VertexInputBinding)描述
-	static VkVertexInputBindingDescription getBindingDescription()
-	{
-		VkVertexInputBindingDescription bindingDescription = {};
-		bindingDescription.binding = 0; //顶点数据的绑定点
-		bindingDescription.stride = sizeof(Vertex); //两个Vertex之间的间隔
-		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-		return bindingDescription;
-	}
-
-	//返回顶点数据中每个 属性的描述 
-	static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescription()
-	{
-		std::array<VkVertexInputAttributeDescription, 2> attributeDescription = {};
-		attributeDescription[0].binding = 0; //顶点数据的绑定点
-		attributeDescription[0].location = 0; //在vertex shader中的location
-		attributeDescription[0].format = VK_FORMAT_R32G32B32_SFLOAT; //属性的数据格式
-		attributeDescription[0].offset = offsetof(Vertex, pos); //属性相对于一个Vertex起始位置的便宜量
-
-		attributeDescription[1].binding = 0;
-		attributeDescription[1].location = 1;
-		attributeDescription[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-		attributeDescription[1].offset = offsetof(Vertex, color);
-
-		return attributeDescription;
-	}
-};
-
-const std::vector<Vertex> vertices =
-{
-	{{ 0.0f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-	{{ 0.0f, 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-	{{ 0.0f, 0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}},
-	{{ 0.0f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-	{{ 0.0f, 0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}},
-	{{ 0.0f, -0.5f,  0.5f}, {1.0f, 1.0f, 1.0f}}
-};
+//const std::vector<Vertex> vertices =
+//{
+//	{{ 0.0f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+//	{{ 0.0f, 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+//	{{ 0.0f, 0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}},
+//	{{ 0.0f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+//	{{ 0.0f, 0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}},
+//	{{ 0.0f, -0.5f,  0.5f}, {1.0f, 1.0f, 1.0f}}
+//};
 
 struct UniformBufferObj
 {
@@ -91,6 +96,11 @@ private:
 
 	size_t mCurrFrame;
 
+	Mix::MxVkModelImporter* mModelImporter;
+	Mix::MxVkModel* mModel;
+
+	Mix::MxCamera mCamera;
+
 	void draw();
 	void updateUniformBuffer(const uint32_t imageIndex);
 public:
@@ -101,6 +111,35 @@ public:
 	void destroy();
 };
 
+//debug test----------------------------------
+#include"MxUtils.h"
+void drawSlipLine()
+{
+	std::cout << "------------------------" << std::endl;
+}
+
+std::ostream& operator<<(std::ostream& os, const glm::vec3& vec3)
+{
+	return os << "[ " << vec3.x << ", " << vec3.y << ", " << vec3.z << " ]";
+}
+
+std::ostream& operator<<(std::ostream& os, const Mix::MxAxis& axis)
+{
+	return os << "{ " << axis.x << ", " << axis.y << ", " << axis.z << " }";
+}
+
+std::ostream& operator<<(std::ostream& os, const glm::quat& quat)
+{
+	return os << "[ " << quat.x << ", " << quat.y << ", " << quat.z << ", " << quat.w << " ]";
+}
+
+std::ostream& operator<<(std::ostream& os, const Mix::MxTransform& trans)
+{
+	std::cout << trans.getPosition() << std::endl;
+	std::cout << trans.getAxis() << std::endl;
+	return std::cout << trans.getEulerAngles() << std::endl;
+}
+//debug test----------------------------------
 int main()
 {
 	if (SDL_Init(SDL_INIT_VIDEO) != 0)
@@ -108,6 +147,7 @@ int main()
 		std::cerr << "Error : Failed to initialize SDL2!" << std::endl;
 		return -1;
 	}
+
 	TestDemo demo;
 	demo.init();
 	demo.run();
@@ -208,9 +248,22 @@ void TestDemo::draw()
 
 void TestDemo::updateUniformBuffer(const uint32_t imageIndex)
 {
+	// test quaternion
+	static auto start = std::chrono::system_clock::now();
+	auto duration = std::chrono::system_clock::now() - start;
+
+	auto angle = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count() * 0.08f;
+
+	glm::vec3 eulerAngle(glm::radians(0.0f), glm::radians(0.0f), glm::radians(0.0f));
+	glm::quat quaternion = glm::tquat(eulerAngle);
+
 	UniformBufferObj ubo = {};
-	ubo.model = glm::mat4(1.0f);
-	ubo.view = glm::lookAt(glm::vec3(2.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.model = glm::mat4(1.0f)*glm::toMat4(quaternion);
+
+	mCamera.setPosition(0.0f, angle*0.008f + -5.0f, 3.0f);
+	mCamera.lookAt(glm::vec3(0.0f, 0.0f, 0.0f));
+	ubo.view = std::move(mCamera.getViewMatrix());
+
 	ubo.proj = glm::perspective(glm::radians(45.0f),
 								mSwapchain->getCurrExtent().width / float(mSwapchain->getCurrExtent().height),
 								0.1f, 10.0f);
@@ -237,6 +290,12 @@ TestDemo::TestDemo()
 
 	mSampleCount = VK_SAMPLE_COUNT_1_BIT;
 	mCurrFrame = 0;
+
+	mModelImporter = new Mix::MxVkModelImporter;
+	if (!mModelImporter->initialize())
+		throw std::runtime_error("Error : Failed to create model importer");
+	mModel = mModelImporter->loadModel("Model\\robot.fbx");
+
 }
 
 bool TestDemo::init()
@@ -306,8 +365,8 @@ bool TestDemo::init()
 
 		//load shader
 		mShaderHelper->setup(mManager);
-		auto vertexShader = mShaderHelper->createModule("Shader/vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-		auto fragShader = mShaderHelper->createModule("Shader/frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+		auto vertexShader = mShaderHelper->createModule("Shader/vShader.spv", VK_SHADER_STAGE_VERTEX_BIT);
+		auto fragShader = mShaderHelper->createModule("Shader/fShader.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
 		//setup graphics pipeline
 		mPipeline->setup(mManager);
@@ -320,8 +379,8 @@ bool TestDemo::init()
 		//todo create a new class to deal with this
 		std::vector<VkVertexInputBindingDescription> inputBinding;
 		std::vector<VkVertexInputAttributeDescription> inputAttri;
-		inputBinding.push_back(Vertex::getBindingDescription());
-		auto attri = Vertex::getAttributeDescription();
+		inputBinding.push_back(Mix::Vertex::getBindingDescription());
+		auto attri = Mix::Vertex::getAttributeDescription();
 		inputAttri.insert(inputAttri.end(), attri.begin(), attri.end());
 		mPipeline->setVertexInput(inputBinding, inputAttri);
 
@@ -365,10 +424,10 @@ bool TestDemo::init()
 
 		//create depth stencil buffer
 		mDepthImage = Mix::MxVkImage::createDepthStencil(mManager, VK_FORMAT_D24_UNORM_S8_UINT,
-														   mSwapchain->getCurrExtent(),
-														   mSampleCount);
+														 mSwapchain->getCurrExtent(),
+														 mSampleCount);
 
-		//create command pool
+	  //create command pool
 		mCommandPool->setup(mManager);
 		mCommandPool->createCommandPool(VK_QUEUE_GRAPHICS_BIT);
 
@@ -389,13 +448,14 @@ bool TestDemo::init()
 		}
 
 		//create vertex buffer
-		{
-			VkDeviceSize bufferSize = sizeof(Vertex) * vertices.size();
-			//temporary buffer
-			mVertexBuffer = Mix::MxVkBuffer::createBuffer(mManager, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-															VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, bufferSize);
-			Mix::MxVkBuffer::copyToDeviceBuffer(mManager, mCommandPool, mVertexBuffer, vertices.data());
-		}
+		//{
+		//	VkDeviceSize bufferSize = sizeof(Mix::Vertex) * mModel->getMeshes()[0].getVertexCount();
+		//	//temporary buffer
+		//	mVertexBuffer = Mix::MxVkBuffer::createBuffer(mManager, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		//												  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, bufferSize);
+		//	Mix::MxVkBuffer::copyToDeviceBuffer(mManager, mCommandPool, mVertexBuffer, mModel->getMeshes()[0].getBuffer());
+		//}
+		mModel->createVertexBuffer(mManager, mCommandPool);
 
 		//create uniform buffer
 		{
@@ -403,8 +463,8 @@ bool TestDemo::init()
 			for (size_t i = 0; i < mSwapchain->getImageCount(); ++i)
 			{
 				mUniformBuffers[i] = Mix::MxVkBuffer::createBuffer(mManager, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-																	 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-																	 sizeof(UniformBufferObj));
+																   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+																   sizeof(UniformBufferObj));
 			}
 		}
 
@@ -453,11 +513,6 @@ bool TestDemo::init()
 				//bind pipeline
 				vkCmdBindPipeline(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline->getPipeline());
 
-				//bind vertex buffer
-				VkBuffer vertexBuffers[] = { mVertexBuffer->buffer };
-				VkDeviceSize offsets[] = { 0 };
-				vkCmdBindVertexBuffers(mCommandBuffers[i], 0, 1, vertexBuffers, offsets);
-
 				//bind descriptor sets
 				vkCmdBindDescriptorSets(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline->getPipelineLayout(),
 										0, //第一个描述符集合的索引 
@@ -466,7 +521,7 @@ bool TestDemo::init()
 										0, nullptr);
 
 				//draw
-				vkCmdDraw(mCommandBuffers[i], vertices.size(), 1, 0, 0);
+				mModel->draw(mCommandBuffers[i]);
 
 				//end render pass
 				mRenderPass->endRenderPass(mCommandBuffers[i]);
@@ -515,7 +570,7 @@ void TestDemo::destroy()
 	MX_FREE_OBJECT(mPipeline);
 	MX_FREE_OBJECT(mRenderPass);
 
-	MX_FREE_OBJECT(mVertexBuffer);
+	MX_FREE_OBJECT(mModel);
 	for (auto& buffer : mUniformBuffers)
 		MX_FREE_OBJECT(buffer);
 

@@ -2,7 +2,7 @@
 
 namespace Mix
 {
-	std::string mxErrorString(const VkResult res)
+	std::string VkResultToString(const VkResult res)
 	{
 		std::string r;
 		switch (res)

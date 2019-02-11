@@ -4,6 +4,9 @@
 
 #include<vulkan/vulkan.h>
 
+#include<glm/glm.hpp>
+#include<glm/gtc/matrix_transform.hpp>
+
 #include<stdexcept>
 #include<string>
 
@@ -26,7 +29,8 @@ namespace Mix
 		VkQueue compute;
 	};
 
-	std::string mxErrorString(const VkResult res);
+
+	std::string VkResultToString(const VkResult res);
 
 
 }
@@ -38,7 +42,7 @@ namespace Mix
 	VkResult __result=(r);											\
 	if(__result != VK_SUCCESS)										\
 	{																\
-		throw std::runtime_error("Error : "+Mix::mxErrorString(__result)+" at "+__FILE__+" : "+std::to_string(__LINE__));  				\
+		throw std::runtime_error("Error : "+Mix::VkResultToString(__result)+" at "+__FILE__+" : "+std::to_string(__LINE__));  				\
 	}																\
 }
 

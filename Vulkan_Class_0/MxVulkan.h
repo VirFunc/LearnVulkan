@@ -20,4 +20,6 @@
 #include"MxVkSyncObjectPool.h"
 #include"MxVkUtils.h"
 
+#include"MxVkModel.h"
+
 #endif // !_MX_VULKAN_H_

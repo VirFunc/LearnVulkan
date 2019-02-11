@@ -63,6 +63,15 @@
     <ClCompile Include="MxVkComponent.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="MxVkModel.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MxCamera.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MxUtils.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MxWindow.h">
@@ -113,12 +122,21 @@
     <ClInclude Include="MxVkComponent.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="MxVkModel.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MxCamera.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MxUtils.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shader\shader.frag">
+    <None Include="Shader\vShader.vert">
       <Filter>Shader</Filter>
     </None>
-    <None Include="Shader\shader.vert">
+    <None Include="Shader\fShader.frag">
       <Filter>Shader</Filter>
     </None>
   </ItemGroup>
